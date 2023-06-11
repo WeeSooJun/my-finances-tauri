@@ -1,0 +1,22 @@
+.logo.vite:hover {
+  filter: drop-shadow(0 0 2em #747bff);
+}
+
+.logo.solid:hover {
+  filter: drop-shadow(0 0 2em #2f5d90);
+}
+
+th, td {
+  border: 1px solid;
+  /* height: 1.5em; */
+}
+
+table {
+  border-collapse: collapse;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
