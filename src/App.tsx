@@ -6,11 +6,16 @@ import "./App.css";
 function App() {
   const [showNewEntry, setShowNewEntry] = createSignal(false);
   const [date, setDate] = createSignal<Date>(new Date());
-  const [name, setName] = createSignal<string>("");
-  const [category, setCategory] = createSignal<string>("");
-  const [type, setType] = createSignal<string>("");
-  const [bank, setBank] = createSignal<string>("");
+  const [name, setName] = createSignal<string>();
+  const [category, setCategory] = createSignal<string>();
+  const [type, setType] = createSignal<string>();
+  const [bank, setBank] = createSignal<string>();
   const [amount, setAmount] = createSignal<number>();
+
+  const [types, setTypes] = createSignal<string[]>();
+
+  const [newType, setNewType] = createSignal<string>();
+  const [showNewTypeInput, setShowNewTypeInput] = createSignal(false);
 
   const emptyRow = (
     <>
@@ -56,9 +61,29 @@ function App() {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
 
+  async function addNewTransactionType() {
+    await invoke("return_string", { word: "test" });
+    // setTypes(await invoke("add_new_transaction_type", { word: newType() }));
+  }
+
   return (
     <div class="container">
       <h1>My Finances!</h1>
+      <button onClick={() => setShowNewTypeInput((current) => !current)}>
+        {showNewTypeInput() && "Cancel"}
+        {!showNewTypeInput() && "Create"}
+      </button>
+      {showNewTypeInput() && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            addNewTransactionType();
+          }}
+        >
+          <input />
+          <button type="submit">Add Type</button>
+        </form>
+      )}
       <button onClick={() => setShowNewEntry((current) => !current)}>
         {showNewEntry() && "Cancel"}
         {!showNewEntry() && "Create"}
@@ -75,7 +100,7 @@ function App() {
         <table>
           <thead>
             <tr>
-              <th>Date</th>
+              <th>Date (DD/MM/YYYY)</th>
               <th>Name</th>
               <th>Category</th>
               <th>Type</th>
@@ -86,7 +111,7 @@ function App() {
           <tbody>
             {showNewEntry() && emptyRow}
             <tr>
-              <td>15-Aug</td>
+              <td>15/08/2022</td>
               <td>Fish Soup</td>
               <td>Food</td>
               <td>Paylah</td>
