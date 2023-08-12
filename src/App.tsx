@@ -61,9 +61,8 @@ function App() {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
 
-  async function addNewTransactionType() {
-    await invoke("return_string", { word: "test" });
-    // setTypes(await invoke("add_new_transaction_type", { word: newType() }));
+  async function addNewTransactionType(newType: string) {
+    await invoke("add_new_transaction_type", { newType });
   }
 
   return (
@@ -71,13 +70,13 @@ function App() {
       <h1>My Finances!</h1>
       <button onClick={() => setShowNewTypeInput((current) => !current)}>
         {showNewTypeInput() && "Cancel"}
-        {!showNewTypeInput() && "Create"}
+        {!showNewTypeInput() && "Create New Type"}
       </button>
       {showNewTypeInput() && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            addNewTransactionType();
+            addNewTransactionType(e.target[0].value);
           }}
         >
           <input />
@@ -86,7 +85,7 @@ function App() {
       )}
       <button onClick={() => setShowNewEntry((current) => !current)}>
         {showNewEntry() && "Cancel"}
-        {!showNewEntry() && "Create"}
+        {!showNewEntry() && "Add New Entry"}
       </button>
       <br />
       <form

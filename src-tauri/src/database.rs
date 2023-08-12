@@ -13,6 +13,7 @@ pub fn initialize_database(app_handle: &AppHandle) -> Result<Connection, rusqlit
         .expect("The app data directory should exist.");
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
     let sqlite_path = app_dir.join("MyApp.sqlite");
+    println!("{:?}", sqlite_path);
 
     let mut db = Connection::open(sqlite_path)?;
 
@@ -20,7 +21,35 @@ pub fn initialize_database(app_handle: &AppHandle) -> Result<Connection, rusqlit
     let existing_user_version: u32 = user_pragma.query_row([], |row| Ok(row.get(0)?))?;
     drop(user_pragma);
 
-    upgrade_database_if_needed(&mut db, existing_user_version)?;
+    let tx = db.transaction()?;
+    tx.execute_batch(
+        "
+  CREATE TABLE IF NOT EXISTS items (
+    title TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS transaction_type (
+    id INTEGER PRIMARY KEY,
+    type TEXT NOT NULL UNIQUE
+  );
+  CREATE TABLE IF NOT EXISTS bank (
+    id INTEGER PRIMARY KEY,
+    bank_name TEXT NOT NULL UNIQUE
+  );
+  CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY,
+    date TEXT NOT NULL,
+    name TEXT NOT NULL,
+    type INTEGER NOT NULL,
+    bank INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    FOREIGN KEY(type) REFERENCES transaction_type(id),
+    FOREIGN KEY(bank) REFERENCES bank(id)
+  );
+  ",
+    )?;
+    tx.commit()?;
+
+    // upgrade_database_if_needed(&mut db, existing_user_version)?;
 
     Ok(db)
 }
@@ -39,9 +68,28 @@ pub fn upgrade_database_if_needed(
 
         tx.execute_batch(
             "
-      CREATE TABLE items (
+      CREATE TABLE IF NOT EXISTS items (
         title TEXT NOT NULL
-      );",
+      );
+      CREATE TABLE IF NOT EXISTS transaction_type (
+        id INTEGER PRIMARY KEY,
+        type_name TEXT NOT NULL UNIQUE
+      );
+      CREATE TABLE IF NOT EXISTS bank (
+        id INTEGER PRIMARY KEY,
+        bank_name TEXT NOT NULL UNIQUE
+      );
+      CREATE TABLE IF NOT EXISTS transaction (
+        id INTEGER PRIMARY KEY,
+        date TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type INTEGER NOT NULL,
+        bank INTEGER NOT NULL
+        amount REAL NOT NULL,
+        FOREIGN KEY(type) REFERENCES transaction_type(id),
+        FOREIGN KEY(bank) REFERENCES bank(id)
+      );
+      ",
         )?;
 
         tx.commit()?;
@@ -51,7 +99,7 @@ pub fn upgrade_database_if_needed(
 }
 
 pub fn add_item(title: &str, db: &Connection) -> Result<(), rusqlite::Error> {
-    let mut statement = db.prepare("INSERT INTO items (title) VALUES (@title)")?;
+    let mut statement = db.prepare("INSERT INTO transaction_type (type) VALUES (@title)")?;
     statement.execute(named_params! { "@title": title })?;
 
     Ok(())

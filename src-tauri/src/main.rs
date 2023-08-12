@@ -1,4 +1,9 @@
-use rusqlite::{Connection, Result};
+mod database;
+mod state;
+
+use rusqlite::Result;
+use state::{AppState, ServiceAccess};
+use tauri::{AppHandle, Manager, State};
 
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #[cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
@@ -15,52 +20,33 @@ fn return_string(word: String) -> String {
 }
 
 #[tauri::command]
-fn add_new_transaction_type(new_type: String) -> Result<()> {
-    Ok(())
-}
-
-pub struct AppState {
-    pub db: std::sync::Mutex<Option<Connection>>,
+fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> String {
+    println!("Before Insert {}", new_type);
+    app_handle
+        .db(|db| database::add_item(&new_type, db))
+        .unwrap();
+    println!("After Insert");
+    return new_type;
 }
 
 fn main() -> Result<()> {
-    let conn = Connection::open("transactions.db")?;
-
-    // Create transaction types
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS transaction_type (
-             id INTEGER PRIMARY KEY,
-             type_name TEXT NOT NULL UNIQUE
-         )",
-        (),
-    );
-
-    // Create banks
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS bank (
-             id INTEGER PRIMARY KEY,
-             bank_name TEXT NOT NULL UNIQUE
-         )",
-        (),
-    );
-
-    // Create transaction table
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS transaction (
-             id INTEGER PRIMARY KEY,
-             date TEXT NOT NULL,
-             name TEXT NOT NULL,
-             type INTEGER NOT NULL,
-             bank INTEGER NOT NULL
-             amount REAL NOT NULL,
-             FOREIGN KEY(type) REFERENCES transaction_type(id),
-             FOREIGN KEY(bank) REFERENCES bank(id)
-         )",
-        (),
-    );
-
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, return_string])
+        .manage(AppState {
+            db: Default::default(),
+        })
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            return_string,
+            add_new_transaction_type
+        ])
+        .setup(|app| {
+            let handle = app.handle();
+            let app_state: State<AppState> = handle.state();
+            let db =
+                database::initialize_database(&handle).expect("Database initialize should succeed");
+            *app_state.db.lock().unwrap() = Some(db);
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 
