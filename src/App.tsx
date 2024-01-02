@@ -1,9 +1,26 @@
-import { createSignal } from "solid-js";
-import logo from "./assets/logo.svg";
+import { createSignal, onMount } from "solid-js";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
 
+// interface FormElements extends HTMLFormControlsCollection {
+//   password: HTMLInputElement;
+// }
+
+// interface PasswordFormElement extends HTMLFormElement {
+//   readonly elements: FormElements;
+// }
+
+interface SingleTarget {
+  value: string;
+}
+
+interface FormEvent {
+  target: SingleTarget[];
+}
+
 function App() {
+  const [showSetOrEnter, setShowSetOrEnter] = createSignal(true);
+  const [showEnterPassword, setShowEnterPassword] = createSignal(true);
   const [showNewEntry, setShowNewEntry] = createSignal(false);
   const [date, setDate] = createSignal<Date>(new Date());
   const [name, setName] = createSignal<string>();
@@ -16,6 +33,10 @@ function App() {
 
   const [newType, setNewType] = createSignal<string>();
   const [showNewTypeInput, setShowNewTypeInput] = createSignal(false);
+
+  // onMount(async () => {
+  //   await returnShowSetPassword();
+  // });
 
   const emptyRow = (
     <>
@@ -60,66 +81,96 @@ function App() {
   // async function returnString() {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
+  invoke("is_database_initialized").then((res) =>
+    setShowSetOrEnter(res as boolean)
+  );
 
   async function addNewTransactionType(newType: string) {
     await invoke("add_new_transaction_type", { newType });
   }
 
+  async function setPassphrase(passphrase: string) {
+    await invoke("set_database_passphrase", { passphrase });
+    setShowEnterPassword(false);
+  }
+
   return (
-    <div class="container">
-      <h1>My Finances!</h1>
-      <button onClick={() => setShowNewTypeInput((current) => !current)}>
-        {showNewTypeInput() && "Cancel"}
-        {!showNewTypeInput() && "Create New Type"}
-      </button>
-      {showNewTypeInput() && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            addNewTransactionType(e.target[0].value);
-          }}
-        >
-          <input />
-          <button type="submit">Add Type</button>
-        </form>
+    <>
+      {showEnterPassword() && (
+        <>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const passwordInput = document.querySelector(
+                "#password"
+              ) as HTMLInputElement;
+              await setPassphrase(passwordInput.value);
+            }}
+          >
+            Please {showSetOrEnter() ? "enter" : "set"} your password
+            <input id="password" />
+            <button type="submit">Enter</button>
+          </form>
+        </>
       )}
-      <button onClick={() => setShowNewEntry((current) => !current)}>
-        {showNewEntry() && "Cancel"}
-        {!showNewEntry() && "Add New Entry"}
-      </button>
-      <br />
-      <form
-        class="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          // greet();
-          // returnString();
-        }}
-      >
-        <table>
-          <thead>
-            <tr>
-              <th>Date (DD/MM/YYYY)</th>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Bank</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {showNewEntry() && emptyRow}
-            <tr>
-              <td>15/08/2022</td>
-              <td>Fish Soup</td>
-              <td>Food</td>
-              <td>Paylah</td>
-              <td></td>
-              <td>4.8</td>
-            </tr>
-          </tbody>
-        </table>
-        {/* <input
+      {!showEnterPassword() && (
+        <div class="container">
+          <h1>My Finances!</h1>
+          <button onClick={() => setShowNewTypeInput((current) => !current)}>
+            {showNewTypeInput() && "Cancel"}
+            {!showNewTypeInput() && "Create New Type"}
+          </button>
+          {showNewTypeInput() && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const newTypeInput = document.querySelector(
+                  "#newTypeInput"
+                ) as HTMLInputElement;
+                addNewTransactionType(newTypeInput.value);
+              }}
+            >
+              <input id="newTypeInput" />
+              <button type="submit">Add Type</button>
+            </form>
+          )}
+          <button onClick={() => setShowNewEntry((current) => !current)}>
+            {showNewEntry() && "Cancel"}
+            {!showNewEntry() && "Add New Entry"}
+          </button>
+          <br />
+          <form
+            class="row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              // greet();
+              // returnString();
+            }}
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Date (DD/MM/YYYY)</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Bank</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {showNewEntry() && emptyRow}
+                <tr>
+                  <td>15/08/2022</td>
+                  <td>Fish Soup</td>
+                  <td>Food</td>
+                  <td>Paylah</td>
+                  <td></td>
+                  <td>4.8</td>
+                </tr>
+              </tbody>
+            </table>
+            {/* <input
           id="string-input"
           onChange={(e) => setString(e.currentTarget.value)}
           placeholder="Enter a string"
@@ -130,11 +181,13 @@ function App() {
           placeholder="Enter a name..."
         />
         <button type="submit">Greet</button> */}
-      </form>
+          </form>
 
-      {/* <p>{stringMsg()}</p>
+          {/* <p>{stringMsg()}</p>
       <p>{greetMsg()}</p> */}
-    </div>
+        </div>
+      )}
+    </>
   );
 }
 

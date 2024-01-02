@@ -6,16 +6,22 @@ const CURRENT_DB_VERSION: u32 = 1;
 // Credit to RandomEngy https://github.com/RandomEngy/tauri-sqlite/blob/main/src-tauri/src/database.rs
 /// Initializes the database connection, creating the .sqlite file if needed, and upgrading the database
 /// if it's out of date.
-pub fn initialize_database(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
+pub fn initialize_database(
+    app_handle: &AppHandle,
+    passphrase: String,
+) -> Result<Connection, rusqlite::Error> {
     let app_dir = app_handle
         .path_resolver()
         .app_data_dir()
         .expect("The app data directory should exist.");
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-    let sqlite_path = app_dir.join("MyApp.sqlite");
-    println!("{:?}", sqlite_path);
+    let sqlite_path = app_dir.join("MyFinances.sqlite");
 
     let mut db = Connection::open(sqlite_path)?;
+
+    db.execute(&format!("PRAGMA key ='{}';", passphrase), []);
+
+    db.execute("PRAGMA cipher_compatibility = '4';", []);
 
     let mut user_pragma = db.prepare("PRAGMA user_version")?;
     let existing_user_version: u32 = user_pragma.query_row([], |row| Ok(row.get(0)?))?;
