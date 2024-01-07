@@ -26,11 +26,16 @@ fn is_database_initialized(app_handle: AppHandle) -> bool {
 }
 
 #[tauri::command]
-fn set_database_passphrase(app_handle: AppHandle, passphrase: String) {
+fn set_database_passphrase(app_handle: AppHandle, passphrase: String) -> bool {
     let app_state: State<AppState> = app_handle.state();
-    let db = database::initialize_database(&app_handle, passphrase)
-        .expect("Database initialize should succeed");
+    // let db = database::initialize_database(&app_handle, passphrase)
+    //     .expect("Database initialize should succeed");
+    let db = match database::initialize_database(&app_handle, passphrase) {
+        Ok(result) => result,
+        Err(_) => return false,
+    };
     *app_state.db.lock().unwrap() = Some(db);
+    true
 }
 
 // #[tauri::command]

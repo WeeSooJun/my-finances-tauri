@@ -90,8 +90,10 @@ function App() {
   }
 
   async function setPassphrase(passphrase: string) {
-    await invoke("set_database_passphrase", { passphrase });
-    setShowEnterPassword(false);
+    const result = await invoke("set_database_passphrase", { passphrase });
+    if (result) {
+      setShowEnterPassword(false);
+    }
   }
 
   return (

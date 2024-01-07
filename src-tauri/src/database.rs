@@ -18,10 +18,10 @@ pub fn initialize_database(
     let sqlite_path = app_dir.join("MyFinances.sqlite");
 
     let mut db = Connection::open(sqlite_path)?;
+    // Maybe can consider combining the 2 lines below
+    db.execute("PRAGMA cipher_compatibility = '4';", []);
 
     db.execute(&format!("PRAGMA key ='{}';", passphrase), []);
-
-    db.execute("PRAGMA cipher_compatibility = '4';", []);
 
     let mut user_pragma = db.prepare("PRAGMA user_version")?;
     let existing_user_version: u32 = user_pragma.query_row([], |row| Ok(row.get(0)?))?;
