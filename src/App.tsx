@@ -22,6 +22,7 @@ function App() {
   const [showSetOrEnter, setShowSetOrEnter] = createSignal(true);
   const [showEnterPassword, setShowEnterPassword] = createSignal(true);
   const [showNewEntry, setShowNewEntry] = createSignal(false);
+  const [showPasswordError, setShowPasswordError] = createSignal(false);
   const [date, setDate] = createSignal<Date>(new Date());
   const [name, setName] = createSignal<string>();
   const [category, setCategory] = createSignal<string>();
@@ -91,9 +92,11 @@ function App() {
 
   async function setPassphrase(passphrase: string) {
     const result = await invoke("set_database_passphrase", { passphrase });
-    if (result) {
-      setShowEnterPassword(false);
+    if (!result) {
+      setShowPasswordError(true);
+      return;
     }
+      setShowEnterPassword(false);
   }
 
   return (
@@ -113,6 +116,7 @@ function App() {
             <input id="password" />
             <button type="submit">Enter</button>
           </form>
+          {showPasswordError() && <div style={{color: "red"}}>Wrong password, please try again.</div>}
         </>
       )}
       {!showEnterPassword() && (
