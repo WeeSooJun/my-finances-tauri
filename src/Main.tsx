@@ -64,14 +64,16 @@ const Main = () => {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
 
-  async function addNewTransactionType(newType: string) {
-    await invoke("add_new_transaction_type", { newType });
+  async function addNewTransactionType(newType: string | undefined): Promise<boolean> {
+    return await invoke("add_new_transaction_type", { newType });
   }
 
   return (
     <div class="container">
       <h1>My Finances!</h1>
-      <button onClick={() => setShowNewTypeInput((current) => !current)}>
+      <button onClick={() => {
+        setShowNewTypeInput((current) => !current);
+      }}>
         {showNewTypeInput() && "Cancel"}
         {!showNewTypeInput() && "Create New Type"}
       </button>
@@ -83,6 +85,7 @@ const Main = () => {
               "#newTypeInput"
             ) as HTMLInputElement;
             addNewTransactionType(newTypeInput.value);
+            setShowNewTypeInput(false);
           }}
         >
           <input id="newTypeInput" />

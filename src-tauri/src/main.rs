@@ -50,11 +50,11 @@ fn set_database_passphrase(app_handle: AppHandle, passphrase: String) -> bool {
 // }
 
 #[tauri::command]
-fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> String {
-    app_handle
-        .db(|db| database::add_item(&new_type, db))
-        .unwrap();
-    return new_type;
+fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> bool {
+    match app_handle.db(|db| database::add_item(&new_type, db)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
 
 fn main() -> Result<()> {
