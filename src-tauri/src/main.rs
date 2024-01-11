@@ -57,6 +57,13 @@ fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> bool {
     }
 }
 
+#[tauri::command]
+fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String> {
+    app_handle
+        .db(|db| database::get_types_for_field(db, &field_name))
+        .expect("no db error")
+}
+
 fn main() -> Result<()> {
     tauri::Builder::default()
         .manage(AppState {
@@ -67,7 +74,8 @@ fn main() -> Result<()> {
             // return_string,
             add_new_transaction_type,
             is_database_initialized,
-            set_database_passphrase
+            set_database_passphrase,
+            get_types_for_field
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,44 +1,54 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { createSignal } from "solid-js";
 
-const emptyRow = (
-  <>
-    <tr>
-      <td>
-        <input
-          type="date"
-          value={new Date().toISOString().split("T")[0]}
-          // onChange={(e) => setDate(Date.parse(e.target.value))}
-        />
-      </td>
-      <td>
-        <input type="string" />
-      </td>
-      <td>
-        <select />
-      </td>
-      <td>
-        <select />
-      </td>
-      <td>
-        <select />
-      </td>
-      <td>
-        <input
-          id="amountBox"
-          type="number"
-          onKeyDown={(e) => {
-            if (e.key === "+" || e.key === "e") e.preventDefault();
-          }}
-        />
-      </td>
-    </tr>
-  </>
-);
+interface NewRowWithFieldValuesProps {
+  types: string[];
+}
+
+const newRowWithFieldValues = ({ types }: NewRowWithFieldValuesProps) => {
+  return (
+    <>
+      <tr>
+        <td>
+          <input
+            type="date"
+            value={new Date().toISOString().split("T")[0]}
+            // onChange={(e) => setDate(Date.parse(e.target.value))}
+          />
+        </td>
+        <td>
+          <input type="string" />
+        </td>
+        <td>
+          <select />
+        </td>
+        <td>
+          <select>
+            {types.map(val => <option>{val}</option>)}
+          </select>
+        </td>
+        <td>
+          <select />
+        </td>
+        <td>
+          <input
+            id="amountBox"
+            type="number"
+            onKeyDown={(e) => {
+              if (e.key === "+" || e.key === "e") e.preventDefault();
+            }}
+          />
+        </td>
+      </tr>
+    </>
+  );
+}
+
 
 const Main = () => {
   const [showNewTypeInput, setShowNewTypeInput] = createSignal(false);
   const [showNewEntry, setShowNewEntry] = createSignal(false);
+  const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
 
   // const [date, setDate] = createSignal<Date>(new Date());
   // const [name, setName] = createSignal<string>();
@@ -68,6 +78,10 @@ const Main = () => {
     return await invoke("add_new_transaction_type", { newType });
   }
 
+  async function getTypesForField(fieldName: string): Promise<string[]> {
+    return await invoke("get_types_for_field", { fieldName })
+  }
+
   return (
     <div class="container">
       <h1>My Finances!</h1>
@@ -79,12 +93,12 @@ const Main = () => {
       </button>
       {showNewTypeInput() && (
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             const newTypeInput = document.querySelector(
               "#newTypeInput"
             ) as HTMLInputElement;
-            addNewTransactionType(newTypeInput.value);
+            await addNewTransactionType(newTypeInput.value);
             setShowNewTypeInput(false);
           }}
         >
@@ -92,7 +106,10 @@ const Main = () => {
           <button type="submit">Add Type</button>
         </form>
       )}
-      <button onClick={() => setShowNewEntry((current) => !current)}>
+      <button onClick={async () => {
+        setShowNewEntry((current) => !current);
+        setTransactionTypes(await getTypesForField("transaction_type"));
+      }}>
         {showNewEntry() && "Cancel"}
         {!showNewEntry() && "Add New Entry"}
       </button>
@@ -117,7 +134,7 @@ const Main = () => {
             </tr>
           </thead>
           <tbody>
-            {showNewEntry() && emptyRow}
+            {showNewEntry() && newRowWithFieldValues({ types: transactionTypes()} )}
             <tr>
               <td>15/08/2022</td>
               <td>Fish Soup</td>

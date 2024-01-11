@@ -1,4 +1,4 @@
-use rusqlite::{named_params, Connection};
+use rusqlite::{named_params, Connection, Result};
 use std::fs;
 use tauri::AppHandle;
 
@@ -35,11 +35,11 @@ pub fn initialize_database(
   );
   CREATE TABLE IF NOT EXISTS transaction_type (
     id INTEGER PRIMARY KEY,
-    type TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
   );
   CREATE TABLE IF NOT EXISTS bank (
     id INTEGER PRIMARY KEY,
-    bank_name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
   );
   CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY,
@@ -79,11 +79,11 @@ pub fn upgrade_database_if_needed(
       );
       CREATE TABLE IF NOT EXISTS transaction_type (
         id INTEGER PRIMARY KEY,
-        type_name TEXT NOT NULL UNIQUE
+        name TEXT NOT NULL UNIQUE
       );
       CREATE TABLE IF NOT EXISTS bank (
         id INTEGER PRIMARY KEY,
-        bank_name TEXT NOT NULL UNIQUE
+        name TEXT NOT NULL UNIQUE
       );
       CREATE TABLE IF NOT EXISTS transaction (
         id INTEGER PRIMARY KEY,
@@ -105,9 +105,8 @@ pub fn upgrade_database_if_needed(
 }
 
 pub fn add_item(title: &str, db: &Connection) -> Result<(), rusqlite::Error> {
-    let mut statement = db.prepare("INSERT INTO transaction_type (type) VALUES (@title)")?;
+    let mut statement = db.prepare("INSERT INTO transaction_type (name) VALUES (@title)")?;
     statement.execute(named_params! { "@title": title })?;
-
     Ok(())
 }
 
@@ -122,4 +121,14 @@ pub fn get_all(db: &Connection) -> Result<Vec<String>, rusqlite::Error> {
     }
 
     Ok(items)
+}
+
+pub fn get_types_for_field(
+    db: &Connection,
+    field_name: &String,
+) -> Result<Vec<String>, rusqlite::Error> {
+    let query = format!("SELECT name FROM {}", field_name);
+    let mut statement = db.prepare(&query)?;
+    let rows = statement.query_map([], |row| row.get(0))?;
+    rows.collect()
 }
