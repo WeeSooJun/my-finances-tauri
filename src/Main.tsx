@@ -1,11 +1,14 @@
-import { invoke } from "@tauri-apps/api/tauri";
 import { createSignal } from "solid-js";
+import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField } from "./api";
+import NewFieldType from "./NewFieldType";
 
 interface NewRowWithFieldValuesProps {
   types: string[];
+  categories: string[];
+  banks: string[];
 }
 
-const newRowWithFieldValues = ({ types }: NewRowWithFieldValuesProps) => {
+const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
   return (
     <>
       <tr>
@@ -20,7 +23,9 @@ const newRowWithFieldValues = ({ types }: NewRowWithFieldValuesProps) => {
           <input type="string" />
         </td>
         <td>
-          <select />
+          <select>
+            {categories.map(val => <option>{val}</option>)}
+          </select>
         </td>
         <td>
           <select>
@@ -28,7 +33,9 @@ const newRowWithFieldValues = ({ types }: NewRowWithFieldValuesProps) => {
           </select>
         </td>
         <td>
-          <select />
+          <select>
+            {banks.map(val => <option>{val}</option>)}
+          </select>
         </td>
         <td>
           <input
@@ -46,15 +53,14 @@ const newRowWithFieldValues = ({ types }: NewRowWithFieldValuesProps) => {
 
 
 const Main = () => {
-  const [showNewTypeInput, setShowNewTypeInput] = createSignal(false);
   const [showNewEntry, setShowNewEntry] = createSignal(false);
   const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
+  const [categories, setCategories] = createSignal<string[]>([]);
+  const [banks, setBanks] = createSignal<string[]>([]);
 
   // const [date, setDate] = createSignal<Date>(new Date());
   // const [name, setName] = createSignal<string>();
-  // const [category, setCategory] = createSignal<string>();
   // const [type, setType] = createSignal<string>();
-  // const [bank, setBank] = createSignal<string>();
   // const [amount, setAmount] = createSignal<number>();
 
   // const [types, setTypes] = createSignal<string[]>();
@@ -74,41 +80,17 @@ const Main = () => {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
 
-  async function addNewTransactionType(newType: string | undefined): Promise<boolean> {
-    return await invoke("add_new_transaction_type", { newType });
-  }
-
-  async function getTypesForField(fieldName: string): Promise<string[]> {
-    return await invoke("get_types_for_field", { fieldName })
-  }
-
   return (
     <div class="container">
       <h1>My Finances!</h1>
-      <button onClick={() => {
-        setShowNewTypeInput((current) => !current);
-      }}>
-        {showNewTypeInput() && "Cancel"}
-        {!showNewTypeInput() && "Create New Type"}
-      </button>
-      {showNewTypeInput() && (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const newTypeInput = document.querySelector(
-              "#newTypeInput"
-            ) as HTMLInputElement;
-            await addNewTransactionType(newTypeInput.value);
-            setShowNewTypeInput(false);
-          }}
-        >
-          <input id="newTypeInput" />
-          <button type="submit">Add Type</button>
-        </form>
-      )}
+      <NewFieldType fieldName="category" fieldSubmit={addNewCategory}/>
+      <NewFieldType fieldName="transactionType" fieldSubmit={addNewTransactionType}/>
+      <NewFieldType fieldName="bank" fieldSubmit={addNewBank}/>
       <button onClick={async () => {
         setShowNewEntry((current) => !current);
+        setCategories(await getTypesForField("category"));
         setTransactionTypes(await getTypesForField("transaction_type"));
+        setBanks(await getTypesForField("bank"));
       }}>
         {showNewEntry() && "Cancel"}
         {!showNewEntry() && "Add New Entry"}
@@ -134,7 +116,7 @@ const Main = () => {
             </tr>
           </thead>
           <tbody>
-            {showNewEntry() && newRowWithFieldValues({ types: transactionTypes()} )}
+            {showNewEntry() && newRowWithFieldValues({ types: transactionTypes(),  categories: categories(), banks: banks()} )}
             <tr>
               <td>15/08/2022</td>
               <td>Fish Soup</td>

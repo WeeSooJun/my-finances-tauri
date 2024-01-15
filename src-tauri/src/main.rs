@@ -51,7 +51,23 @@ fn set_database_passphrase(app_handle: AppHandle, passphrase: String) -> bool {
 
 #[tauri::command]
 fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> bool {
-    match app_handle.db(|db| database::add_item(&new_type, db)) {
+    match app_handle.db(|db| database::add_new_transaction_type(&new_type, db)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+#[tauri::command]
+fn add_new_category(app_handle: AppHandle, new_category: String) -> bool {
+    match app_handle.db(|db| database::add_new_category(&new_category, db)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+#[tauri::command]
+fn add_new_bank(app_handle: AppHandle, new_bank: String) -> bool {
+    match app_handle.db(|db| database::add_new_bank(&new_bank, db)) {
         Ok(_) => true,
         Err(_) => false,
     }
@@ -73,6 +89,8 @@ fn main() -> Result<()> {
             // greet,
             // return_string,
             add_new_transaction_type,
+            add_new_category,
+            add_new_bank,
             is_database_initialized,
             set_database_passphrase,
             get_types_for_field
