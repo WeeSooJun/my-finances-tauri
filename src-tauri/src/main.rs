@@ -4,6 +4,7 @@
 )]
 mod database;
 mod state;
+mod transaction;
 
 use rusqlite::Result;
 use state::{AppState, ServiceAccess};
@@ -72,6 +73,14 @@ fn add_new_bank(app_handle: AppHandle, new_bank: String) -> bool {
         Err(_) => false,
     }
 }
+
+// #[tauri::command]
+// fn add_new_transaction(app_handle: AppHandle, new_transaction: String) -> bool {
+//     match app_handle.db(|db| database::add_new_bank(&new_bank, db)) {
+//         Ok(_) => true,
+//         Err(_) => false,
+//     }
+// }
 
 #[tauri::command]
 fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String> {

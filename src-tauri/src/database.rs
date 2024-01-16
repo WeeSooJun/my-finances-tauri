@@ -2,6 +2,8 @@ use rusqlite::{named_params, Connection, Result};
 use std::fs;
 use tauri::AppHandle;
 
+use crate::transaction::Transaction;
+
 const CURRENT_DB_VERSION: u32 = 1;
 // Credit to RandomEngy https://github.com/RandomEngy/tauri-sqlite/blob/main/src-tauri/src/database.rs
 /// Initializes the database connection, creating the .sqlite file if needed, and upgrading the database
@@ -123,6 +125,22 @@ pub fn add_new_category(new_category: &str, db: &Connection) -> Result<(), rusql
 pub fn add_new_bank(new_bank: &str, db: &Connection) -> Result<(), rusqlite::Error> {
     let mut statement = db.prepare("INSERT INTO bank (name) VALUES (@new_bank)")?;
     statement.execute(named_params! { "@new_bank": new_bank })?;
+    Ok(())
+}
+
+pub fn get_all_transactions(db: &Connection) -> Result<(), rusqlite::Error> {
+    let mut stmt =
+        db.prepare("SELECT date, name, transaction_type, bank, amount FROM transactions")?;
+    let rows = stmt.query_map([], |row| {
+        Ok(Transaction {
+            date: row.get("date")?, // Adjust the column name accordingly
+            name: row.get("name")?,
+            transaction_type: row.get("transaction_type")?,
+            bank: row.get("bank")?,
+            amount: row.get("amount")?,
+        })
+    })?;
+
     Ok(())
 }
 
