@@ -1,24 +1,6 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-// struct MyNaiveDate(NaiveDate);
-
-// impl FromSql for MyNaiveDate {
-//     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-//         match value {
-//             ValueRef::Text(s) => NaiveDate::parse_from_str(&s, "%Y-%m-%d")
-//                 .map_err(|e| rusqlite::types::FromSqlError::Other(Box::new(e))),
-//             _ => Err(rusqlite::types::FromSqlError::InvalidType),
-//         }
-//     }
-// }
-
-// impl ToSql for MyNaiveDate {
-//     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput> {
-//         Ok(ToSqlOutput::from(self.0.format("%Y-%m-%d").to_string()))
-//     }
-// }
-
 fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
