@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField } from "./api";
+import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField, addNewTransaction } from "./api";
 import NewFieldType from "./NewFieldType";
 
 interface NewRowWithFieldValuesProps {
@@ -7,6 +7,14 @@ interface NewRowWithFieldValuesProps {
   categories: string[];
   banks: string[];
 }
+
+export type Transaction = {
+  date: Date,
+  name: string,
+  category: string,
+  transaction_type: string,
+  bank: string,
+};
 
 const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
   return (
@@ -41,9 +49,6 @@ const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValu
           <input
             id="amountBox"
             type="number"
-            onKeyDown={(e) => {
-              if (e.key === "+" || e.key === "e") e.preventDefault();
-            }}
           />
         </td>
       </tr>
@@ -98,8 +103,20 @@ const Main = () => {
       <br />
       <form
         class="row"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
+          console.log(e);
+          const transaction = {
+            date: (e.target as any)[0].value,
+            name: (e.target as any)[1].value,
+            category: (e.target as any)[2].value,
+            transaction_type: (e.target as any)[3].value,
+            bank: (e.target as any)[4].value,
+            amount: parseFloat((e.target as any)[5].value),
+          }
+          console.log(transaction);
+          await(addNewTransaction(transaction))
+          // await(addNewTransaction())
           // greet();
           // returnString();
         }}
@@ -136,8 +153,8 @@ const Main = () => {
           id="greet-input"
           onChange={(e) => setName(e.currentTarget.value)}
           placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button> */}
+        />*/}
+        <button style={{ visibility: "hidden", width: 0, height: 0, position: "absolute" }} type="submit" /> {/* I need this here in order for the enter button to work */}
       </form>
       {/* <p>{stringMsg()}</p>
       <p>{greetMsg()}</p> */}

@@ -10,6 +10,7 @@ use rusqlite::Result;
 use state::{AppState, ServiceAccess};
 use std::fs;
 use tauri::{AppHandle, Manager, State};
+use transaction::Transaction;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -74,13 +75,13 @@ fn add_new_bank(app_handle: AppHandle, new_bank: String) -> bool {
     }
 }
 
-// #[tauri::command]
-// fn add_new_transaction(app_handle: AppHandle, new_transaction: String) -> bool {
-//     match app_handle.db(|db| database::add_new_bank(&new_bank, db)) {
-//         Ok(_) => true,
-//         Err(_) => false,
-//     }
-// }
+#[tauri::command]
+fn add_new_transaction(app_handle: AppHandle, new_transaction: Transaction) -> bool {
+    match app_handle.db(|db| database::add_new_transaction(new_transaction, db)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
 
 #[tauri::command]
 fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String> {
@@ -100,6 +101,7 @@ fn main() -> Result<()> {
             add_new_transaction_type,
             add_new_category,
             add_new_bank,
+            add_new_transaction,
             is_database_initialized,
             set_database_passphrase,
             get_types_for_field

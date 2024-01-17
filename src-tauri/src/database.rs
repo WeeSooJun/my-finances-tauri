@@ -32,9 +32,6 @@ pub fn initialize_database(
     let tx = db.transaction()?;
     tx.execute_batch(
         "
-  CREATE TABLE IF NOT EXISTS items (
-    title TEXT NOT NULL
-  );
   CREATE TABLE IF NOT EXISTS transaction_type (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE
@@ -51,16 +48,16 @@ pub fn initialize_database(
     id INTEGER PRIMARY KEY,
     date TEXT NOT NULL,
     name TEXT NOT NULL,
-    type INTEGER NOT NULL,
-    bank INTEGER NOT NULL,
-    amount REAL NOT NULL,
-    FOREIGN KEY(type) REFERENCES transaction_type(id),
-    FOREIGN KEY(bank) REFERENCES bank(id)
+    type TEXT NOT NULL,
+    bank TEXT NOT NULL,
+    amount REAL NOT NULL
   );
   ",
     )?;
     tx.commit()?;
 
+    // FOREIGN KEY(type) REFERENCES transaction_type(id),
+    // FOREIGN KEY(bank) REFERENCES bank(id)
     // upgrade_database_if_needed(&mut db, existing_user_version)?;
 
     Ok(db)
@@ -125,6 +122,16 @@ pub fn add_new_category(new_category: &str, db: &Connection) -> Result<(), rusql
 pub fn add_new_bank(new_bank: &str, db: &Connection) -> Result<(), rusqlite::Error> {
     let mut statement = db.prepare("INSERT INTO bank (name) VALUES (@new_bank)")?;
     statement.execute(named_params! { "@new_bank": new_bank })?;
+    Ok(())
+}
+
+pub fn add_new_transaction(
+    new_transaction: Transaction,
+    db: &Connection,
+) -> Result<(), rusqlite::Error> {
+    println!("{:?}", new_transaction);
+    let mut statement = db.prepare("INSERT INTO transactions (date, name, type, bank, amount) VALUES (@date, @name, @type, @bank, @amount)")?;
+    statement.execute(named_params! { "@date": new_transaction.date, "@name": new_transaction.name, "@type": new_transaction.transaction_type, "@bank": new_transaction.bank, "@amount": new_transaction.amount })?;
     Ok(())
 }
 
