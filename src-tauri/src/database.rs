@@ -48,7 +48,8 @@ pub fn initialize_database(
     id INTEGER PRIMARY KEY,
     date TEXT NOT NULL,
     name TEXT NOT NULL,
-    type TEXT NOT NULL,
+    category TEXT NOT NULL,
+    transaction_type TEXT NOT NULL,
     bank TEXT NOT NULL,
     amount REAL NOT NULL
   );
@@ -130,38 +131,26 @@ pub fn add_new_transaction(
     db: &Connection,
 ) -> Result<(), rusqlite::Error> {
     println!("{:?}", new_transaction);
-    let mut statement = db.prepare("INSERT INTO transactions (date, name, type, bank, amount) VALUES (@date, @name, @type, @bank, @amount)")?;
-    statement.execute(named_params! { "@date": new_transaction.date, "@name": new_transaction.name, "@type": new_transaction.transaction_type, "@bank": new_transaction.bank, "@amount": new_transaction.amount })?;
+    let mut statement = db.prepare("INSERT INTO transactions (date, name, category, transaction_type, bank, amount) VALUES (@date, @name, @category, @transaction_type, @bank, @amount)")?;
+    statement.execute(named_params! { "@date": new_transaction.date, "@name": new_transaction.name, "@category": new_transaction.category, "@transaction_type": new_transaction.transaction_type, "@bank": new_transaction.bank, "@amount": new_transaction.amount })?;
     Ok(())
 }
 
-pub fn get_all_transactions(db: &Connection) -> Result<(), rusqlite::Error> {
+pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::Error> {
     let mut stmt =
-        db.prepare("SELECT date, name, transaction_type, bank, amount FROM transactions")?;
+        db.prepare("SELECT date,name,category,transaction_type,bank,amount FROM transactions")?;
     let rows = stmt.query_map([], |row| {
         Ok(Transaction {
-            date: row.get("date")?, // Adjust the column name accordingly
-            name: row.get("name")?,
-            transaction_type: row.get("transaction_type")?,
-            bank: row.get("bank")?,
-            amount: row.get("amount")?,
+            date: row.get(0)?, // Adjust the column name accordingly
+            name: row.get(1)?,
+            category: row.get(2)?,
+            transaction_type: row.get(3)?,
+            bank: row.get(4)?,
+            amount: row.get(5)?,
         })
     })?;
-
-    Ok(())
-}
-
-pub fn get_all(db: &Connection) -> Result<Vec<String>, rusqlite::Error> {
-    let mut statement = db.prepare("SELECT * FROM items")?;
-    let mut rows = statement.query([])?;
-    let mut items = Vec::new();
-    while let Some(row) = rows.next()? {
-        let title: String = row.get("title")?;
-
-        items.push(title);
-    }
-
-    Ok(items)
+    let result = rows.collect::<Result<Vec<Transaction>, rusqlite::Error>>();
+    result
 }
 
 pub fn get_types_for_field(

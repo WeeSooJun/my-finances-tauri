@@ -84,6 +84,13 @@ fn add_new_transaction(app_handle: AppHandle, new_transaction: Transaction) -> b
 }
 
 #[tauri::command]
+fn get_transactions(app_handle: AppHandle) -> Vec<Transaction> {
+    app_handle
+        .db(|db| database::get_transactions(db))
+        .expect("no db error")
+}
+
+#[tauri::command]
 fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String> {
     app_handle
         .db(|db| database::get_types_for_field(db, &field_name))
@@ -102,6 +109,7 @@ fn main() -> Result<()> {
             add_new_category,
             add_new_bank,
             add_new_transaction,
+            get_transactions,
             is_database_initialized,
             set_database_passphrase,
             get_types_for_field

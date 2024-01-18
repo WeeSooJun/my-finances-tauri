@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
-import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField, addNewTransaction } from "./api";
+import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField, addNewTransaction, getTransactions } from "./api";
 import NewFieldType from "./NewFieldType";
+import { Dayjs } from "dayjs";
 
 interface NewRowWithFieldValuesProps {
   types: string[];
@@ -9,11 +10,12 @@ interface NewRowWithFieldValuesProps {
 }
 
 export type Transaction = {
-  date: Date,
+  date: Dayjs,
   name: string,
   category: string,
   transaction_type: string,
   bank: string,
+  amount: number,
 };
 
 const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
@@ -48,12 +50,22 @@ const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValu
         <td>
           <input
             id="amountBox"
-            type="number"
           />
         </td>
       </tr>
     </>
   );
+}
+
+const renderRow = (transaction: Transaction) => {
+  return (<tr>
+    <td>{transaction.date.format("DD/MM/YYYY")}</td>
+    <td>{transaction.name}</td>
+    <td>{transaction.category}</td>
+    <td>{transaction.transaction_type}</td>
+    <td>{transaction.bank}</td>
+    <td>{transaction.amount}</td>
+  </tr>);
 }
 
 
@@ -62,15 +74,7 @@ const Main = () => {
   const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
   const [categories, setCategories] = createSignal<string[]>([]);
   const [banks, setBanks] = createSignal<string[]>([]);
-
-  // const [date, setDate] = createSignal<Date>(new Date());
-  // const [name, setName] = createSignal<string>();
-  // const [type, setType] = createSignal<string>();
-  // const [amount, setAmount] = createSignal<number>();
-
-  // const [types, setTypes] = createSignal<string[]>();
-
-  // const [newType, setNewType] = createSignal<string>();
+  const [transactions, setTransactions] = createSignal<Transaction[]>([]);
 
   // onMount(async () => {
   //   await returnShowSetPassword();
@@ -84,6 +88,7 @@ const Main = () => {
   // async function returnString() {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
+  getTransactions().then(transactions => setTransactions(transactions));
 
   return (
     <div class="container">
@@ -105,7 +110,6 @@ const Main = () => {
         class="row"
         onSubmit={async (e) => {
           e.preventDefault();
-          console.log(e);
           const transaction = {
             date: (e.target as any)[0].value,
             name: (e.target as any)[1].value,
@@ -114,8 +118,9 @@ const Main = () => {
             bank: (e.target as any)[4].value,
             amount: parseFloat((e.target as any)[5].value),
           }
-          console.log(transaction);
           await(addNewTransaction(transaction))
+          setShowNewEntry(false);
+          setTransactions(await(getTransactions()));
           // await(addNewTransaction())
           // greet();
           // returnString();
@@ -134,14 +139,7 @@ const Main = () => {
           </thead>
           <tbody>
             {showNewEntry() && newRowWithFieldValues({ types: transactionTypes(),  categories: categories(), banks: banks()} )}
-            <tr>
-              <td>15/08/2022</td>
-              <td>Fish Soup</td>
-              <td>Food</td>
-              <td>Paylah</td>
-              <td></td>
-              <td>4.8</td>
-            </tr>
+            {transactions().map(renderRow)}
           </tbody>
         </table>
         {/* <input
