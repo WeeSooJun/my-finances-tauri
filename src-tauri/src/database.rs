@@ -138,7 +138,7 @@ pub fn add_new_transaction(
 
 pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::Error> {
     let mut stmt =
-        db.prepare("SELECT date,name,category,transaction_type,bank,amount FROM transactions")?;
+        db.prepare("SELECT date,name,category,transaction_type,bank,amount FROM transactions ORDER BY date DESC")?;
     let rows = stmt.query_map([], |row| {
         Ok(Transaction {
             date: row.get(0)?, // Adjust the column name accordingly
