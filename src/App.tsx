@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import "./App.css";
+// import "./App.css";
 import Main from "./Main";
 import { invoke } from "@tauri-apps/api/tauri";
 

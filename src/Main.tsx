@@ -33,9 +33,9 @@ const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValu
           <input type="string" />
         </td>
         <td>
-          <select>
-            {categories.map(val => <option>{val}</option>)}
-          </select>
+          <div>
+            {categories.map(val => {return <div><input type="checkbox" value={val} /><label for={val}>{val}</label></div>;})}
+          </div>
         </td>
         <td>
           <select>
@@ -93,18 +93,22 @@ const Main = () => {
   return (
     <div class="container">
       <h1>My Finances!</h1>
-      <NewFieldType fieldName="category" fieldSubmit={addNewCategory}/>
-      <NewFieldType fieldName="transactionType" fieldSubmit={addNewTransactionType}/>
-      <NewFieldType fieldName="bank" fieldSubmit={addNewBank}/>
-      <button onClick={async () => {
-        setShowNewEntry((current) => !current);
-        setCategories(await getTypesForField("category"));
-        setTransactionTypes(await getTypesForField("transaction_type"));
-        setBanks(await getTypesForField("bank"));
-      }}>
-        {showNewEntry() && "Cancel"}
-        {!showNewEntry() && "Add New Entry"}
-      </button>
+      <div>
+        <NewFieldType fieldName="category" fieldSubmit={addNewCategory}/>
+        <NewFieldType fieldName="transactionType" fieldSubmit={addNewTransactionType}/>
+        <NewFieldType fieldName="bank" fieldSubmit={addNewBank}/>
+      </div>
+      <div>
+        <button onClick={async () => {
+          setShowNewEntry((current) => !current);
+          setCategories(await getTypesForField("category"));
+          setTransactionTypes(await getTypesForField("transaction_type"));
+          setBanks(await getTypesForField("bank"));
+        }}>
+          {showNewEntry() && "Cancel"}
+          {!showNewEntry() && "Add New Entry"}
+        </button>
+      </div>
       <br />
       <form
         class="row"
