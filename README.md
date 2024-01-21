@@ -11,3 +11,7 @@ This template should help get you started developing with Tauri, Solid and Types
 Run
 
 `pnpm tauri dev`
+
+Tailwind Watch
+
+`npx tailwindcss -i ./src/input.css -o ./output.css --watch`
