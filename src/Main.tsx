@@ -1,7 +1,8 @@
-import { createSignal } from "solid-js";
-import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField, addNewTransaction, getTransactions } from "./api";
+import { JSX, createSignal } from "solid-js";
+import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField, addNewTransaction, getTransactions, processXlsx } from "./api";
 import NewFieldType from "./NewFieldType";
 import { Dayjs } from "dayjs";
+import { open } from "@tauri-apps/api/dialog";
 
 interface NewRowWithFieldValuesProps {
   types: string[];
@@ -87,6 +88,7 @@ const Main = () => {
   // async function returnString() {
   //   setStringMsg(await invoke("return_string", { word: string() }));
   // }
+
   getTransactions().then(transactions => setTransactions(transactions));
 
   return (
@@ -98,6 +100,18 @@ const Main = () => {
         <NewFieldType fieldName="bank" fieldSubmit={async (e) => {addNewBank(e); setBanks(await getTypesForField("bank"));}}/>
       </div>
       <div>
+        <button onClick={async () => {
+          const selectedFile = await open({
+            multiple: true,
+            filters: [{
+              name: 'xlsx',
+              extensions: ['xlsx']
+            }]
+          });
+          console.log(selectedFile);
+        }}>
+          Import .xlsx
+        </button>
         <button onClick={async () => {
           setShowNewEntry((current) => !current);
           setCategories(await getTypesForField("category"));

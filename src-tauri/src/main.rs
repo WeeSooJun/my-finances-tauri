@@ -97,6 +97,11 @@ fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String>
         .expect("no db error")
 }
 
+#[tauri::command]
+fn process_xlsx(app_handle: AppHandle) {
+    println!("test");
+}
+
 fn main() -> Result<()> {
     tauri::Builder::default()
         .manage(AppState {
@@ -112,7 +117,8 @@ fn main() -> Result<()> {
             get_transactions,
             is_database_initialized,
             set_database_passphrase,
-            get_types_for_field
+            get_types_for_field,
+            process_xlsx
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

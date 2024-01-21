@@ -18,6 +18,10 @@ async function addNewTransaction(newTransaction: Transaction): Promise<boolean> 
   return await invoke("add_new_transaction", { newTransaction });
 }
 
+async function processXlsx() {
+  return await invoke("process_xlsx");
+}
+
 type RawTransaction = {
   date: string,
   name: string,
@@ -36,4 +40,4 @@ async function getTypesForField(fieldName: string): Promise<string[]> {
   return await invoke("get_types_for_field", { fieldName });
 }
 
-export { addNewCategory, addNewTransactionType, addNewBank, getTypesForField, addNewTransaction, getTransactions }
+export { addNewCategory, addNewTransactionType, addNewBank, getTypesForField, addNewTransaction, getTransactions, processXlsx }
