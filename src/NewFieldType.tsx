@@ -2,7 +2,7 @@ import { createSignal } from "solid-js";
 
 interface NewFieldTypeProps {
   fieldName: string;
-  fieldSubmit: (name: string) => Promise<boolean>;
+  fieldSubmit: (name: string) => void;
 }
 
 function convertCamelCaseToView(str: string) {

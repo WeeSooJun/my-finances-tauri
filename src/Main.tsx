@@ -68,7 +68,6 @@ const renderRow = (transaction: Transaction) => {
   </tr>);
 }
 
-
 const Main = () => {
   const [showNewEntry, setShowNewEntry] = createSignal(false);
   const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
@@ -94,9 +93,9 @@ const Main = () => {
     <div class="container">
       <h1>My Finances!</h1>
       <div>
-        <NewFieldType fieldName="category" fieldSubmit={addNewCategory}/>
-        <NewFieldType fieldName="transactionType" fieldSubmit={addNewTransactionType}/>
-        <NewFieldType fieldName="bank" fieldSubmit={addNewBank}/>
+        <NewFieldType fieldName="category" fieldSubmit={async (e) => {addNewCategory(e); setCategories(await getTypesForField("category")); }}/>
+        <NewFieldType fieldName="transactionType" fieldSubmit={async (e) => {addNewTransactionType(e);setTransactionTypes(await getTypesForField("transaction_type")); }}/>
+        <NewFieldType fieldName="bank" fieldSubmit={async (e) => {addNewBank(e); setBanks(await getTypesForField("bank"));}}/>
       </div>
       <div>
         <button onClick={async () => {
