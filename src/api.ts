@@ -18,8 +18,8 @@ async function addNewTransaction(newTransaction: Transaction): Promise<boolean> 
   return await invoke("add_new_transaction", { newTransaction });
 }
 
-async function processXlsx() {
-  return await invoke("process_xlsx");
+async function processXlsx(filePath: string) {
+  return await invoke("process_xlsx", { filePath });
 }
 
 type RawTransaction = {

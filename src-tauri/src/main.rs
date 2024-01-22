@@ -6,6 +6,7 @@ mod database;
 mod state;
 mod transaction;
 
+use calamine::{open_workbook, Error, RangeDeserializerBuilder, Reader, Xlsx};
 use rusqlite::Result;
 use state::{AppState, ServiceAccess};
 use std::fs;
@@ -98,8 +99,13 @@ fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String>
 }
 
 #[tauri::command]
-fn process_xlsx(app_handle: AppHandle) {
-    println!("test");
+fn process_xlsx(app_handle: AppHandle, file_path: String) {
+    let mut excel: Xlsx<_> = open_workbook(file_path).unwrap();
+    if let Ok(r) = excel.worksheet_range("Sheet1") {
+        for row in r.rows() {
+            println!("row={:?}, row[0]={:?}", row, row[0]);
+        }
+    }
 }
 
 fn main() -> Result<()> {

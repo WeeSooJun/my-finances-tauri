@@ -102,13 +102,17 @@ const Main = () => {
       <div>
         <button onClick={async () => {
           const selectedFile = await open({
-            multiple: true,
+            multiple: false,
             filters: [{
               name: 'xlsx',
               extensions: ['xlsx']
             }]
           });
-          console.log(selectedFile);
+          if (selectedFile !== null && !Array.isArray(selectedFile)) {
+            await processXlsx(selectedFile);
+          } else {
+            console.error("Error trying to send file name to rust backend");
+          }
         }}>
           Import .xlsx
         </button>
