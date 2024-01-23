@@ -131,6 +131,7 @@ const Main = () => {
         class="row"
         onSubmit={async (e) => {
           e.preventDefault();
+          // TODO: fix bug here and convert to controlled components for row input
           const transaction = {
             date: (e.target as any)[0].value,
             name: (e.target as any)[1].value,

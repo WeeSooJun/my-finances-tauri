@@ -14,6 +14,16 @@ where
 {
     let date_str = String::deserialize(deserializer)?;
 
+    // // Try parsing the date with the first format ("%d/%m/%Y")
+    // if let Ok(parsed_date) = NaiveDate::parse_from_str(&date_str, "%d/%m/%Y") {
+    //     return Ok(parsed_date);
+    // }
+
+    // // Try parsing the date with the second format ("%Y-%m-%d")
+    // if let Ok(parsed_date) = NaiveDate::parse_from_str(&date_str, "%Y-%m-%d") {
+    //     return Ok(parsed_date);
+    // }
+
     NaiveDate::parse_from_str(&date_str, "%Y-%m-%d").map_err(serde::de::Error::custom)
 }
 

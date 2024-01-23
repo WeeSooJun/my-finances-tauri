@@ -6,7 +6,8 @@ mod database;
 mod state;
 mod transaction;
 
-use calamine::{open_workbook, Error, RangeDeserializerBuilder, Reader, Xlsx};
+use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
+use chrono::NaiveDate;
 use rusqlite::Result;
 use state::{AppState, ServiceAccess};
 use std::fs;
@@ -100,11 +101,31 @@ fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String>
 
 #[tauri::command]
 fn process_xlsx(app_handle: AppHandle, file_path: String) {
-    let mut excel: Xlsx<_> = open_workbook(file_path).unwrap();
-    if let Ok(r) = excel.worksheet_range("Sheet1") {
-        for row in r.rows() {
-            println!("row={:?}, row[0]={:?}", row, row[0]);
-        }
+    let mut workbook: Xlsx<_> = open_workbook(file_path).unwrap();
+    let range = workbook
+        .worksheet_range("Sheet1")
+        .expect("Cannot find 'Sheet1'");
+
+    let mut iter = RangeDeserializerBuilder::new().from_range(&range).unwrap();
+
+    while let Some(result) = iter.next() {
+        let (date, name, category, amount, transaction_type, bank): (
+            String,
+            String,
+            String,
+            f64,
+            String,
+            String,
+        ) = result.unwrap();
+        let new_transaction = Transaction {
+            date: NaiveDate::parse_from_str(&date, "%d/%m/%Y").unwrap(),
+            name,
+            category,
+            amount,
+            transaction_type,
+            bank,
+        };
+        app_handle.db(|db| database::add_new_transaction(new_transaction, db));
     }
 }
 
