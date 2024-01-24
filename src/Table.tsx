@@ -1,6 +1,7 @@
-import { Accessor, Setter } from "solid-js";
+import { Accessor, Setter, createSignal } from "solid-js";
 import { Transaction } from "./Main";
 import { addNewTransaction, getTransactions } from "./api";
+import { Dayjs } from "dayjs";
 
 interface NewRowWithFieldValuesProps {
   types: string[];
@@ -8,54 +9,17 @@ interface NewRowWithFieldValuesProps {
   banks: string[];
 }
 
-const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
-  return (
-    <>
-      <tr>
-        <td>
-          <input
-            type="date"
-            value={new Date().toISOString().split("T")[0]}
-            // onChange={(e) => setDate(Date.parse(e.target.value))}
-          />
-        </td>
-        <td>
-          <input type="string" />
-        </td>
-        <td>
-          <div>
-            {categories.map(val => {return <div><input type="checkbox" value={val} /><label for={val}>{val}</label></div>;})}
-          </div>
-        </td>
-        <td>
-          <select>
-            {types.map(val => <option>{val}</option>)}
-          </select>
-        </td>
-        <td>
-          <select>
-            {banks.map(val => <option>{val}</option>)}
-          </select>
-        </td>
-        <td>
-          <input
-            id="amountBox"
-          />
-        </td>
-      </tr>
-    </>
-  );
-};
-
 const renderRow = (transaction: Transaction) => {
-  return (<tr>
-    <td>{transaction.date.format("DD/MM/YYYY")}</td>
-    <td>{transaction.name}</td>
-    <td>{transaction.category}</td>
-    <td>{transaction.transaction_type}</td>
-    <td>{transaction.bank}</td>
-    <td>{transaction.amount}</td>
-  </tr>);
+  return (
+    <tr>
+      <td>{transaction.date.format("DD/MM/YYYY")}</td>
+      <td>{transaction.name}</td>
+      <td>{transaction.category}</td>
+      <td>{transaction.transaction_type}</td>
+      <td>{transaction.bank}</td>
+      <td>{transaction.amount}</td>
+    </tr>
+  );
 };
 
 interface TableProps {
@@ -68,43 +32,114 @@ interface TableProps {
   banks: Accessor<string[]>;
 }
 
-const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, transactionTypes, categories, banks}: TableProps) => {
-  return (<form
-    class="row"
-    onSubmit={async (e) => {
-      e.preventDefault();
-      // TODO: fix bug here and convert to controlled components for row input
-      const transaction = {
-        date: (e.target as any)[0].value,
-        name: (e.target as any)[1].value,
-        category: (e.target as any)[2].value,
-        transaction_type: (e.target as any)[3].value,
-        bank: (e.target as any)[4].value,
-        amount: parseFloat((e.target as any)[5].value),
-      };
-      await(addNewTransaction(transaction));
-      setShowNewEntry(false);
-      setTransactions(await(getTransactions()));
-    }}
-  >
-    <table>
-      <thead>
+const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, transactionTypes, categories, banks }: TableProps) => {
+  const [date, setDate] = createSignal<Dayjs | null>();
+  const [name, setName] = createSignal<string>("");
+  const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set([]));
+  const [transactionType, setTransactionType] = createSignal<string | null>();
+  const [bank, setBank] = createSignal<string | null>();
+  const [amount, setAmount] = createSignal<number | null>();
+
+  const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
+    return (
+      <>
         <tr>
-          <th>Date (DD/MM/YYYY)</th>
-          <th>Name</th>
-          <th>Category</th>
-          <th>Type</th>
-          <th>Bank</th>
-          <th>Amount</th>
+          <td>
+            <input
+              type="date"
+              value={new Date().toISOString().split("T")[0]}
+              // onChange={(e) => setDate(e.target.value)}
+            />
+          </td>
+          <td>
+            <input type="string" value={name()} onChange={(e) => setName(e.target.value)} />
+          </td>
+          <td>
+            <div>
+              {categories.map((val) => {
+                return (
+                  <div>
+                    <input
+                      type="checkbox"
+                      value={val}
+                      checked={selectedCategories().has(val)}
+                      onChange={(e) =>
+                        e.target.checked
+                          ? setSelectedCategories((prev) => prev.add(e.target.value))
+                          : setSelectedCategories((prev) => {
+                              prev.delete(e.target.value);
+                              return prev;
+                            })
+                      }
+                    />
+                    <label for={val}>{val}</label>
+                  </div>
+                );
+              })}
+            </div>
+          </td>
+          <td>
+            <select>
+              {types.map((val) => (
+                <option>{val}</option>
+              ))}
+            </select>
+          </td>
+          <td>
+            <select>
+              {banks.map((val) => (
+                <option>{val}</option>
+              ))}
+            </select>
+          </td>
+          <td>
+            <input id="amountBox" />
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        {showNewEntry() && newRowWithFieldValues({ types: transactionTypes(),  categories: categories(), banks: banks()} )}
-        {transactions().map(renderRow)}
-      </tbody>
-    </table>
-    <button style={{ visibility: "hidden", width: 0, height: 0, position: "absolute" }} type="submit" /> {/* I need this here in order for the enter button to work */}
-  </form>);
+      </>
+    );
+  };
+
+  return (
+    <form
+      class="row"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        // TODO: fix bug here and convert to controlled components for row input
+        const transaction = {
+          date: date(),
+          name: name(),
+          category: Array.from(selectedCategories()),
+          transaction_type: transactionType(),
+          bank: bank(),
+          amount: amount(),
+        };
+        console.log(transaction);
+        // await addNewTransaction(transaction);
+        setShowNewEntry(false);
+        setTransactions(await getTransactions());
+      }}
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Date (DD/MM/YYYY)</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Bank</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {showNewEntry() && newRowWithFieldValues({ types: transactionTypes(), categories: categories(), banks: banks() })}
+          {transactions().map(renderRow)}
+        </tbody>
+      </table>
+      <button style={{ visibility: "hidden", width: 0, height: 0, position: "absolute" }} type="submit" />{" "}
+      {/* I need this here in order for the enter button to work */}
+    </form>
+  );
 };
 
 export default Table;

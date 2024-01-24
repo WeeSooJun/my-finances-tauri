@@ -5,7 +5,8 @@ module.exports = {
     },
     "extends": [
         "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+        "plugin:prettier/recommended"
     ],
     "overrides": [
         {
@@ -29,10 +30,10 @@ module.exports = {
         "@typescript-eslint"
     ],
     "rules": {
-        "indent": [
-            "error",
-            2
-        ],
+        // "indent": [
+        //     "error",
+        //     2
+        // ],
         "linebreak-style": [
             "error",
             "unix"
@@ -44,6 +45,12 @@ module.exports = {
         "semi": [
             "error",
             "always"
+        ],
+        "max-len": [
+            "error",
+            { 
+                "code": 150 
+            }
         ]
     }
 };

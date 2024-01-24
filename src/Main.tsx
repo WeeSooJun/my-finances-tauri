@@ -6,12 +6,12 @@ import { open } from "@tauri-apps/api/dialog";
 import Table from "./Table";
 
 export type Transaction = {
-  date: Dayjs,
-  name: string,
-  category: string,
-  transaction_type: string,
-  bank: string,
-  amount: number,
+  date: Dayjs;
+  name: string;
+  category: string;
+  transaction_type: string;
+  bank: string;
+  amount: number;
 };
 
 const Main = () => {
@@ -21,45 +21,77 @@ const Main = () => {
   const [banks, setBanks] = createSignal<string[]>([]);
   const [transactions, setTransactions] = createSignal<Transaction[]>([]);
 
-  getTransactions().then(transactions => setTransactions(transactions));
+  getTransactions().then((transactions) => setTransactions(transactions));
 
   return (
     <div class="container">
       <h1>My Finances!</h1>
       <div>
-        <NewFieldType fieldName="category" fieldSubmit={async (e) => {addNewCategory(e); setCategories(await getTypesForField("category")); }}/>
-        <NewFieldType fieldName="transactionType" fieldSubmit={async (e) => {addNewTransactionType(e);setTransactionTypes(await getTypesForField("transaction_type")); }}/>
-        <NewFieldType fieldName="bank" fieldSubmit={async (e) => {addNewBank(e); setBanks(await getTypesForField("bank"));}}/>
+        <NewFieldType
+          fieldName="category"
+          fieldSubmit={async (e) => {
+            addNewCategory(e);
+            setCategories(await getTypesForField("category"));
+          }}
+        />
+        <NewFieldType
+          fieldName="transactionType"
+          fieldSubmit={async (e) => {
+            addNewTransactionType(e);
+            setTransactionTypes(await getTypesForField("transaction_type"));
+          }}
+        />
+        <NewFieldType
+          fieldName="bank"
+          fieldSubmit={async (e) => {
+            addNewBank(e);
+            setBanks(await getTypesForField("bank"));
+          }}
+        />
       </div>
       <div>
-        <button onClick={async () => {
-          const selectedFile = await open({
-            multiple: false,
-            filters: [{
-              name: "xlsx",
-              extensions: ["xlsx"]
-            }]
-          });
-          if (selectedFile !== null && !Array.isArray(selectedFile)) {
-            await processXlsx(selectedFile);
-          } else {
-            console.error("Error trying to send file name to rust backend");
-          }
-        }}>
+        <button
+          onClick={async () => {
+            const selectedFile = await open({
+              multiple: false,
+              filters: [
+                {
+                  name: "xlsx",
+                  extensions: ["xlsx"],
+                },
+              ],
+            });
+            if (selectedFile !== null && !Array.isArray(selectedFile)) {
+              await processXlsx(selectedFile);
+            } else {
+              console.error("Error trying to send file name to rust backend");
+            }
+          }}
+        >
           Import .xlsx
         </button>
-        <button onClick={async () => {
-          setShowNewEntry((current) => !current);
-          setCategories(await getTypesForField("category"));
-          setTransactionTypes(await getTypesForField("transaction_type"));
-          setBanks(await getTypesForField("bank"));
-        }}>
+        <button
+          onClick={async () => {
+            setShowNewEntry((current) => !current);
+            setCategories(await getTypesForField("category"));
+            setTransactionTypes(await getTypesForField("transaction_type"));
+            setBanks(await getTypesForField("bank"));
+          }}
+        >
           {showNewEntry() && "Cancel"}
           {!showNewEntry() && "Add New Entry"}
         </button>
       </div>
       <br />
-      <Table showNewEntry={showNewEntry} setShowNewEntry={setShowNewEntry} transactions={transactions} setTransactions={setTransactions} transactionTypes={transactionTypes} categories={categories} banks={banks}  />
+      <Table
+        showNewEntry={showNewEntry}
+        setShowNewEntry={setShowNewEntry}
+        transactions={transactions}
+        setTransactions={setTransactions}
+        transactionTypes={transactionTypes}
+        categories={categories}
+        banks={banks}
+      />
     </div>
   );
 };

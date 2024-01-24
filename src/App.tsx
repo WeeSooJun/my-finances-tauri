@@ -24,9 +24,7 @@ function App() {
   const [showPasswordError, setShowPasswordError] = createSignal(false);
   const [showEnterPassword, setShowEnterPassword] = createSignal(true);
 
-  invoke("is_database_initialized").then((res) =>
-    setShowSetOrEnter(res as boolean)
-  );
+  invoke("is_database_initialized").then((res) => setShowSetOrEnter(res as boolean));
 
   async function setPassphrase(passphrase: string) {
     const result = await invoke("set_database_passphrase", { passphrase });
@@ -36,25 +34,27 @@ function App() {
     }
     setShowEnterPassword(false);
   }
-  return <>
-    {showEnterPassword() && (
-      <>
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const passwordInput = document.querySelector("#password") as HTMLInputElement;
-            await setPassphrase(passwordInput.value);
-          }}
-        >
-          Please {showSetOrEnter() ? "enter" : "set"} your password
-          <input id="password" />
-          <button type="submit">Enter</button>
-        </form>
-        {showPasswordError() && <div style={{color: "red"}}>Wrong password, please try again.</div>}
-      </>
-    )}
-    {!showEnterPassword() && <Main />}
-  </>;
+  return (
+    <>
+      {showEnterPassword() && (
+        <>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const passwordInput = document.querySelector("#password") as HTMLInputElement;
+              await setPassphrase(passwordInput.value);
+            }}
+          >
+            Please {showSetOrEnter() ? "enter" : "set"} your password
+            <input id="password" />
+            <button type="submit">Enter</button>
+          </form>
+          {showPasswordError() && <div style={{ color: "red" }}>Wrong password, please try again.</div>}
+        </>
+      )}
+      {!showEnterPassword() && <Main />}
+    </>
+  );
 }
 
 export default App;

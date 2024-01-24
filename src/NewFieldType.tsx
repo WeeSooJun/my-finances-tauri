@@ -21,29 +21,31 @@ function convertCamelCaseToView(str: string) {
 const NewFieldType = ({ fieldName, fieldSubmit }: NewFieldTypeProps) => {
   const [showNewTypeInput, setShowNewTypeInput] = createSignal(false);
 
-  return (<>
-    <button onClick={() => {
-      setShowNewTypeInput((current) => !current);
-    }}>
-      {showNewTypeInput() && "Cancel"}
-      {!showNewTypeInput() && `Create ${convertCamelCaseToView(fieldName)}`}
-    </button>
-    {showNewTypeInput() && (
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const newTypeInput = document.querySelector(
-            `#newTypeInput-${fieldName}`
-          ) as HTMLInputElement;
-          await fieldSubmit(newTypeInput.value);
-          setShowNewTypeInput(false);
+  return (
+    <>
+      <button
+        onClick={() => {
+          setShowNewTypeInput((current) => !current);
         }}
       >
-        <input id={`newTypeInput-${fieldName}`} />
-        <button type="submit">Add Type</button>
-      </form>
-    )}
-  </>);
+        {showNewTypeInput() && "Cancel"}
+        {!showNewTypeInput() && `Create ${convertCamelCaseToView(fieldName)}`}
+      </button>
+      {showNewTypeInput() && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const newTypeInput = document.querySelector(`#newTypeInput-${fieldName}`) as HTMLInputElement;
+            await fieldSubmit(newTypeInput.value);
+            setShowNewTypeInput(false);
+          }}
+        >
+          <input id={`newTypeInput-${fieldName}`} />
+          <button type="submit">Add Type</button>
+        </form>
+      )}
+    </>
+  );
 };
 
 export default NewFieldType;

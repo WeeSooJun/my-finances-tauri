@@ -23,17 +23,17 @@ async function processXlsx(filePath: string) {
 }
 
 type RawTransaction = {
-  date: string,
-  name: string,
-  category: string,
-  bank: string,
-  transaction_type: string,
-  amount: number
-}
+  date: string;
+  name: string;
+  category: string;
+  bank: string;
+  transaction_type: string;
+  amount: number;
+};
 
 async function getTransactions(): Promise<Transaction[]> {
   const result: RawTransaction[] = await invoke("get_transactions");
-  return result.map(raw => ({ ...raw, date: dayjs(raw.date) }));
+  return result.map((raw) => ({ ...raw, date: dayjs(raw.date) }));
 }
 
 async function getTypesForField(fieldName: string): Promise<string[]> {
