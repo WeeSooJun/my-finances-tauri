@@ -40,4 +40,4 @@ async function getTypesForField(fieldName: string): Promise<string[]> {
   return await invoke("get_types_for_field", { fieldName });
 }
 
-export { addNewCategory, addNewTransactionType, addNewBank, getTypesForField, addNewTransaction, getTransactions, processXlsx }
+export { addNewCategory, addNewTransactionType, addNewBank, getTypesForField, addNewTransaction, getTransactions, processXlsx };
