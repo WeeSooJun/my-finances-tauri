@@ -1,7 +1,7 @@
 import { Accessor, Setter, createSignal } from "solid-js";
 import { Transaction } from "./Main";
-import { addNewTransaction, getTransactions } from "./api";
-import { Dayjs } from "dayjs";
+import { getTransactions } from "./api";
+import dayjs, { Dayjs } from "dayjs";
 
 interface NewRowWithFieldValuesProps {
   types: string[];
@@ -33,12 +33,12 @@ interface TableProps {
 }
 
 const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, transactionTypes, categories, banks }: TableProps) => {
-  const [date, setDate] = createSignal<Dayjs | null>();
+  const [date, setDate] = createSignal<Dayjs | null>(null);
   const [name, setName] = createSignal<string>("");
   const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set([]));
-  const [transactionType, setTransactionType] = createSignal<string | null>();
-  const [bank, setBank] = createSignal<string | null>();
-  const [amount, setAmount] = createSignal<number | null>();
+  const [transactionType, setTransactionType] = createSignal<string | null>(null);
+  const [bank, setBank] = createSignal<string | null>(null);
+  const [amount, setAmount] = createSignal<number | null>(null);
 
   const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
     return (
@@ -47,8 +47,8 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
           <td>
             <input
               type="date"
-              value={new Date().toISOString().split("T")[0]}
-              // onChange={(e) => setDate(e.target.value)}
+              value={date() !== null ? (date() as Dayjs).format("YYYY-MM-DD") : new Date().toISOString().split("T")[0]}
+              onChange={(e) => setDate(dayjs(e.target.value))}
             />
           </td>
           <td>
@@ -79,21 +79,26 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
             </div>
           </td>
           <td>
-            <select>
+            <select onChange={(e) => setTransactionType(e.target.value)}>
               {types.map((val) => (
                 <option>{val}</option>
               ))}
             </select>
           </td>
           <td>
-            <select>
+            <select onChange={(e) => setBank(e.target.value)}>
               {banks.map((val) => (
                 <option>{val}</option>
               ))}
             </select>
           </td>
           <td>
-            <input id="amountBox" />
+            <input
+              onChange={(e) => {
+                setAmount(parseFloat(e.target.value));
+              }}
+              value={amount() !== null ? amount() as number : ""}
+            />
           </td>
         </tr>
       </>
