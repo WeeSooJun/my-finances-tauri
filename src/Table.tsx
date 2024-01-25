@@ -1,6 +1,6 @@
 import { Accessor, Setter, createSignal } from "solid-js";
 import { Transaction } from "./Main";
-import { getTransactions } from "./api";
+import { addNewTransaction, getTransactions } from "./api";
 import dayjs, { Dayjs } from "dayjs";
 
 interface NewRowWithFieldValuesProps {
@@ -41,6 +41,7 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
   const [amount, setAmount] = createSignal<number | null>(null);
 
   const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
+    console.log(date());
     return (
       <>
         <tr>
@@ -112,14 +113,13 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
         e.preventDefault();
         // TODO: fix bug here and convert to controlled components for row input
         const transaction = {
-          date: date(),
+          date: date()!.toDate(),
           name: name(),
           category: Array.from(selectedCategories()),
           transaction_type: transactionType(),
           bank: bank(),
           amount: amount(),
         };
-        console.log(transaction);
         // await addNewTransaction(transaction);
         setShowNewEntry(false);
         setTransactions(await getTransactions());

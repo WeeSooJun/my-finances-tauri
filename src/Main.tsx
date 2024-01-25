@@ -9,8 +9,8 @@ export type Transaction = {
   date: Dayjs;
   name: string;
   category: string;
-  transaction_type: string;
-  bank: string;
+  transaction_types: string[];
+  bank: string | null;
   amount: number;
 };
 
