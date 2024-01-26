@@ -63,6 +63,7 @@ const Main = () => {
             });
             if (selectedFile !== null && !Array.isArray(selectedFile)) {
               await processXlsx(selectedFile);
+              setTransactions(await getTransactions());
             } else {
               console.error("Error trying to send file name to rust backend");
             }
