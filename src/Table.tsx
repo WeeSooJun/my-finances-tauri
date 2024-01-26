@@ -15,7 +15,7 @@ const renderRow = (transaction: Transaction) => {
       <td>{transaction.date.format("DD/MM/YYYY")}</td>
       <td>{transaction.name}</td>
       <td>{transaction.category}</td>
-      <td>{transaction.transaction_type}</td>
+      <td>{transaction.transaction_types}</td>
       <td>{transaction.bank}</td>
       <td>{transaction.amount}</td>
     </tr>
@@ -98,7 +98,7 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
               onChange={(e) => {
                 setAmount(parseFloat(e.target.value));
               }}
-              value={amount() !== null ? amount() as number : ""}
+              value={amount() !== null ? (amount() as number) : ""}
             />
           </td>
         </tr>
