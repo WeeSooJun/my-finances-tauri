@@ -36,7 +36,7 @@ pub struct Transaction {
     pub date: NaiveDate,
     pub name: String,
     pub category: String,
-    pub transaction_type: String,
+    pub transaction_types: Vec<String>,
     pub bank: String,
     pub amount: f64,
 }

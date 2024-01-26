@@ -36,7 +36,10 @@ fn set_database_passphrase(app_handle: AppHandle, passphrase: String) -> bool {
     //     .expect("Database initialize should succeed");
     let db = match database::initialize_database(&app_handle, passphrase) {
         Ok(result) => result,
-        Err(_) => return false,
+        Err(e) => {
+            println!("{}", e);
+            return false;
+        }
     };
     *app_state.db.lock().unwrap() = Some(db);
     true
@@ -109,7 +112,7 @@ fn process_xlsx(app_handle: AppHandle, file_path: String) {
     let mut iter = RangeDeserializerBuilder::new().from_range(&range).unwrap();
 
     while let Some(result) = iter.next() {
-        let (date, name, category, amount, transaction_type, bank): (
+        let (date, name, category, amount, raw_transaction_types, bank): (
             String,
             String,
             String,
@@ -117,12 +120,16 @@ fn process_xlsx(app_handle: AppHandle, file_path: String) {
             String,
             String,
         ) = result.unwrap();
+        let transaction_types = raw_transaction_types
+            .split('/')
+            .map(|s| s.trim().to_string())
+            .collect();
         let new_transaction = Transaction {
             date: NaiveDate::parse_from_str(&date, "%d/%m/%Y").unwrap(),
             name,
             category,
             amount,
-            transaction_type,
+            transaction_types,
             bank,
         };
         app_handle.db(|db| database::add_new_transaction(new_transaction, db));

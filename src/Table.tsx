@@ -41,7 +41,6 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
   const [amount, setAmount] = createSignal<number | null>(null);
 
   const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
-    console.log(date());
     return (
       <>
         <tr>

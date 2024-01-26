@@ -1,8 +1,9 @@
+use chrono::NaiveDate;
 use rusqlite::{named_params, Connection, Result};
 use std::fs;
 use tauri::AppHandle;
 
-use crate::transaction::Transaction;
+use crate::transaction::{self, Transaction};
 
 const CURRENT_DB_VERSION: u32 = 1;
 // Credit to RandomEngy https://github.com/RandomEngy/tauri-sqlite/blob/main/src-tauri/src/database.rs
@@ -32,28 +33,36 @@ pub fn initialize_database(
     let tx = db.transaction()?;
     tx.execute_batch(
         "
-  CREATE TABLE IF NOT EXISTS transaction_type (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
-  );
-  CREATE TABLE IF NOT EXISTS bank (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
-  );
-  CREATE TABLE IF NOT EXISTS category (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
-  );
-  CREATE TABLE IF NOT EXISTS transactions (
-    id INTEGER PRIMARY KEY,
-    date TEXT NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT NOT NULL,
-    transaction_type TEXT NOT NULL,
-    bank TEXT NOT NULL,
-    amount REAL NOT NULL
-  );
-  ",
+                CREATE TABLE IF NOT EXISTS transaction_type (
+                    transaction_type_id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE
+                );
+                CREATE TABLE IF NOT EXISTS bank (
+                    bank_id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE
+                );
+                CREATE TABLE IF NOT EXISTS category (
+                    category_id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE
+                );
+                CREATE TABLE IF NOT EXISTS transactions (
+                    transaction_id INTEGER PRIMARY KEY,
+                    date TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    category_id INT NOT NULL,
+                    bank_id TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    FOREIGN KEY (category_id) REFERENCES category(category_id),
+                    FOREIGN KEY (bank_id) REFERENCES bank(bank_id)
+                );
+                CREATE TABLE IF NOT EXISTS transaction_type_mapping (
+                    transaction_id INT,
+                    transaction_type_id INT,
+                    PRIMARY KEY (transaction_id, transaction_type_id),
+                    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
+                    FOREIGN KEY (transaction_type_id) REFERENCES transaction_type(transaction_type_id)
+                );
+            ",
     )?;
     tx.commit()?;
 
@@ -132,25 +141,68 @@ pub fn add_new_transaction(
 ) -> Result<(), rusqlite::Error> {
     println!("{:?}", new_transaction);
     let mut statement = db.prepare("INSERT INTO transactions (date, name, category, transaction_type, bank, amount) VALUES (@date, @name, @category, @transaction_type, @bank, @amount)")?;
-    statement.execute(named_params! { "@date": new_transaction.date, "@name": new_transaction.name, "@category": new_transaction.category, "@transaction_type": new_transaction.transaction_type, "@bank": new_transaction.bank, "@amount": new_transaction.amount })?;
+    // statement.execute(named_params! { "@date": new_transaction.date, "@name": new_transaction.name, "@category": new_transaction.category, "@transaction_type": new_transaction.transaction_type, "@bank": new_transaction.bank, "@amount": new_transaction.amount })?;
     Ok(())
 }
 
 pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::Error> {
-    let mut stmt =
-        db.prepare("SELECT date,name,category,transaction_type,bank,amount FROM transactions ORDER BY date DESC")?;
-    let rows = stmt.query_map([], |row| {
-        Ok(Transaction {
-            date: row.get(0)?, // Adjust the column name accordingly
-            name: row.get(1)?,
-            category: row.get(2)?,
-            transaction_type: row.get(3)?,
-            bank: row.get(4)?,
-            amount: row.get(5)?,
-        })
-    })?;
-    let result = rows.collect::<Result<Vec<Transaction>, rusqlite::Error>>();
-    result
+    let mut stmt = db.prepare(
+        "
+            SELECT
+                t.transaction_id,
+                t.date,
+                t.name,
+                c.name,
+                group_concat(tt.name),
+                b.name,
+                t.amount
+            FROM transactions t
+            JOIN category c ON t.category_id = c.category_id
+            LEFT JOIN bank b ON t.bank_id = b.bank_id
+            JOIN transaction_type_mapping ttm ON t.transaction_id = ttm.transaction_id
+            JOIN transaction_type tt ON ttm.transaction_type_id = tt.transaction_type_id
+            GROUP BY t.transaction_id;
+        ",
+    )?;
+    let mut transactions: Vec<Transaction> = Vec::new();
+
+    for row in stmt.query_map([], |row| {
+        Ok((
+            row.get(1)?,
+            row.get(2)?,
+            row.get(3)?,
+            row.get(4)?,
+            row.get(5)?,
+            row.get(6)?,
+        ))
+    })? {
+        let (date, name, category, transaction_types, bank, amount): (
+            NaiveDate,
+            String,
+            String,
+            String,
+            String,
+            f64,
+        ) = row?;
+
+        let transaction_types = transaction_types
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect();
+
+        let transaction = Transaction {
+            name,
+            amount,
+            date,
+            category,
+            bank,
+            transaction_types,
+        };
+
+        transactions.push(transaction);
+    }
+    println!("{:?}", transactions);
+    Ok(transactions)
 }
 
 pub fn get_types_for_field(
