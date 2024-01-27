@@ -82,7 +82,7 @@ fn add_new_bank(app_handle: AppHandle, new_bank: String) -> bool {
 
 #[tauri::command]
 fn add_new_transaction(app_handle: AppHandle, new_transaction: Transaction) -> bool {
-    match app_handle.db(|db| database::add_new_transaction(new_transaction, db)) {
+    match app_handle.db_mut(|db| database::add_new_transaction(new_transaction, db)) {
         Ok(_) => true,
         Err(_) => false,
     }
@@ -132,7 +132,7 @@ fn process_xlsx(app_handle: AppHandle, file_path: String) {
             transaction_types,
             bank,
         };
-        app_handle.db(|db| database::add_new_transaction(new_transaction, db));
+        app_handle.db_mut(|db| database::add_new_transaction(new_transaction, db));
     }
 }
 

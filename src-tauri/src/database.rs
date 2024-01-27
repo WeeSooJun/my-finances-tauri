@@ -135,14 +135,37 @@ pub fn add_new_bank(new_bank: &str, db: &Connection) -> Result<(), rusqlite::Err
     Ok(())
 }
 
-pub fn add_new_transaction(
-    new_transaction: Transaction,
-    db: &Connection,
-) -> Result<(), rusqlite::Error> {
+pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) -> Result<()> {
     println!("{:?}", new_transaction);
-    let mut statement = db.prepare("INSERT INTO transactions (date, name, category, transaction_type, bank, amount) VALUES (@date, @name, @category, @transaction_type, @bank, @amount)")?;
-    // statement.execute(named_params! { "@date": new_transaction.date, "@name": new_transaction.name, "@category": new_transaction.category, "@transaction_type": new_transaction.transaction_type, "@bank": new_transaction.bank, "@amount": new_transaction.amount })?;
-    Ok(())
+    let tx = db.transaction()?;
+
+    let transaction_id = tx.execute(
+        "INSERT INTO 
+            transactions (date, name, category, bank, amount) 
+            VALUES (@date, @name, @category, @bank, @amount);",
+        named_params! {
+            "@date": new_transaction.date,
+            "@name": new_transaction.name,
+            "@category": new_transaction.category,
+            "@bank": new_transaction.bank,
+            "@amount": new_transaction.amount
+        },
+    )? as i32;
+
+    for transaction_type_name in &new_transaction.transaction_types {
+        let transaction_type_id: i32 = tx.query_row(
+            "SELECT type_id FROM transaction_type WHERE name = ?",
+            &[transaction_type_name],
+            |row| row.get(0),
+        )?;
+
+        tx.execute(
+            "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
+            &[&transaction_id, &transaction_type_id],
+        )?;
+    }
+
+    tx.commit()
 }
 
 pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::Error> {
