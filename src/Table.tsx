@@ -27,16 +27,16 @@ interface TableProps {
   setShowNewEntry: Setter<boolean>;
   setTransactions: Setter<Transaction[]>;
   transactions: Accessor<Transaction[]>;
-  transactionTypes: Accessor<string[]>;
+  transactionTypesOptions: Accessor<string[]>;
   categories: Accessor<string[]>;
   banks: Accessor<string[]>;
 }
 
-const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, transactionTypes, categories, banks }: TableProps) => {
+const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, transactionTypesOptions, categories, banks }: TableProps) => {
   const [date, setDate] = createSignal<Dayjs | null>(null);
   const [name, setName] = createSignal<string>("");
-  const [selectedCategories, setSelectedCategories] = createSignal<Set<string>>(new Set([]));
-  const [transactionType, setTransactionType] = createSignal<string | null>(null);
+  const [category, setCategory] = createSignal<string | null>(null);
+  const [transactionTypes, setTransactionTypes] = createSignal<Set<string>>(new Set([]));
   const [bank, setBank] = createSignal<string | null>(null);
   const [amount, setAmount] = createSignal<number | null>(null);
 
@@ -55,35 +55,35 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
             <input type="string" value={name()} onChange={(e) => setName(e.target.value)} />
           </td>
           <td>
-            <div>
-              {categories.map((val) => {
-                return (
-                  <div>
-                    <input
-                      type="checkbox"
-                      value={val}
-                      checked={selectedCategories().has(val)}
-                      onChange={(e) =>
-                        e.target.checked
-                          ? setSelectedCategories((prev) => prev.add(e.target.value))
-                          : setSelectedCategories((prev) => {
-                              prev.delete(e.target.value);
-                              return prev;
-                            })
-                      }
-                    />
-                    <label for={val}>{val}</label>
-                  </div>
-                );
-              })}
-            </div>
-          </td>
-          <td>
-            <select onChange={(e) => setTransactionType(e.target.value)}>
-              {types.map((val) => (
+            <select onChange={(e) => setCategory(e.target.value)}>
+              {categories.map((val) => (
                 <option>{val}</option>
               ))}
             </select>
+          </td>
+          <td>
+            <div>
+                {transactionTypesOptions().map((val) => {
+                  return (
+                    <div>
+                      <input
+                        type="checkbox"
+                        value={val}
+                        checked={transactionTypes().has(val)}
+                        onChange={(e) =>
+                          e.target.checked
+                            ? setTransactionTypes((prev) => prev.add(e.target.value))
+                            : setTransactionTypes((prev) => {
+                                prev.delete(e.target.value);
+                                return prev;
+                              })
+                        }
+                      />
+                      <label for={val}>{val}</label>
+                    </div>
+                  );
+                })}
+              </div>
           </td>
           <td>
             <select onChange={(e) => setBank(e.target.value)}>
@@ -114,8 +114,8 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
         const transaction = {
           date: date()!.toDate(),
           name: name(),
-          category: Array.from(selectedCategories()),
-          transaction_type: transactionType(),
+          category: category(),
+          transaction_type: Array.from(transactionTypes()),
           bank: bank(),
           amount: amount(),
         };
@@ -136,7 +136,7 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
           </tr>
         </thead>
         <tbody>
-          {showNewEntry() && newRowWithFieldValues({ types: transactionTypes(), categories: categories(), banks: banks() })}
+          {showNewEntry() && newRowWithFieldValues({ types: transactionTypesOptions(), categories: categories(), banks: banks() })}
           {transactions().map(renderRow)}
         </tbody>
       </table>

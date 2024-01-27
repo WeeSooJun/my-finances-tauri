@@ -89,7 +89,7 @@ const Main = () => {
         setShowNewEntry={setShowNewEntry}
         transactions={transactions}
         setTransactions={setTransactions}
-        transactionTypes={transactionTypes}
+        transactionTypesOptions={transactionTypes}
         categories={categories}
         banks={banks}
       />
