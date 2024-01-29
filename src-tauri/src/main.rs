@@ -82,6 +82,7 @@ fn add_new_bank(app_handle: AppHandle, new_bank: String) -> bool {
 
 #[tauri::command]
 fn add_new_transaction(app_handle: AppHandle, new_transaction: Transaction) -> bool {
+    // println!("{:?}", new_transaction);
     match app_handle.db_mut(|db| database::add_new_transaction(new_transaction, db)) {
         Ok(_) => true,
         Err(_) => false,

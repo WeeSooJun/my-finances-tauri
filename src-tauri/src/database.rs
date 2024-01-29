@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use rusqlite::{named_params, Connection, Result};
+use rusqlite::{ffi::Error, named_params, Connection, Result};
 use std::fs;
 use tauri::AppHandle;
 
@@ -62,6 +62,9 @@ pub fn initialize_database(
                     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
                     FOREIGN KEY (transaction_type_id) REFERENCES transaction_type(transaction_type_id)
                 );
+
+                INSERT OR IGNORE INTO category (name) VALUES ('');
+                INSERT OR IGNORE INTO bank (name) VALUES ('');
             ",
     )?;
     tx.commit()?;
@@ -136,33 +139,46 @@ pub fn add_new_bank(new_bank: &str, db: &Connection) -> Result<(), rusqlite::Err
 }
 
 pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) -> Result<()> {
-    println!("{:?}", new_transaction);
     let tx = db.transaction()?;
+    let category_id: i32 = tx.query_row(
+        "SELECT category_id FROM category WHERE name = ?",
+        &[&new_transaction.category],
+        |row| row.get(0),
+    )?;
 
-    let transaction_id = tx.execute(
+    let bank_id: i32 = tx.query_row(
+        "SELECT bank_id FROM bank WHERE name = ?",
+        &[&new_transaction.bank],
+        |row| row.get(0),
+    )?;
+
+    tx.execute(
         "INSERT INTO 
-            transactions (date, name, category, bank, amount) 
-            VALUES (@date, @name, @category, @bank, @amount);",
+            transactions (date, name, category_id, bank_id, amount) 
+            VALUES (@date, @name, @category_id, @bank_id, @amount);",
         named_params! {
             "@date": new_transaction.date,
             "@name": new_transaction.name,
-            "@category": new_transaction.category,
-            "@bank": new_transaction.bank,
+            "@category_id": category_id,
+            "@bank_id": bank_id,
             "@amount": new_transaction.amount
         },
-    )? as i32;
+    )?;
+    let transaction_id = tx.last_insert_rowid() as i32;
 
     for transaction_type_name in &new_transaction.transaction_types {
         let transaction_type_id: i32 = tx.query_row(
-            "SELECT type_id FROM transaction_type WHERE name = ?",
+            "SELECT transaction_type_id FROM transaction_type WHERE name = ?",
             &[transaction_type_name],
             |row| row.get(0),
         )?;
 
-        tx.execute(
-            "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
-            &[&transaction_id, &transaction_type_id],
-        )?;
+        if !transaction_type_name.is_empty() {
+            tx.execute(
+                "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
+                &[&transaction_id, &transaction_type_id],
+            )?;
+        }
     }
 
     tx.commit()
@@ -182,8 +198,8 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             FROM transactions t
             JOIN category c ON t.category_id = c.category_id
             LEFT JOIN bank b ON t.bank_id = b.bank_id
-            JOIN transaction_type_mapping ttm ON t.transaction_id = ttm.transaction_id
-            JOIN transaction_type tt ON ttm.transaction_type_id = tt.transaction_type_id
+            LEFT JOIN transaction_type_mapping ttm ON t.transaction_id = ttm.transaction_id
+            LEFT JOIN transaction_type tt ON ttm.transaction_type_id = tt.transaction_type_id
             GROUP BY t.transaction_id;
         ",
     )?;
@@ -194,7 +210,7 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             row.get(1)?,
             row.get(2)?,
             row.get(3)?,
-            row.get(4)?,
+            row.get(4).unwrap_or("".to_owned()),
             row.get(5)?,
             row.get(6)?,
         ))
@@ -224,7 +240,6 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
 
         transactions.push(transaction);
     }
-    println!("{:?}", transactions);
     Ok(transactions)
 }
 

@@ -1,10 +1,11 @@
-import { Accessor, Setter, createSignal } from "solid-js";
+import { Setter, createComputed, createSignal } from "solid-js";
+import type { Component } from "solid-js";
 import { Transaction } from "./Main";
 import { addNewTransaction, getTransactions } from "./api";
 import dayjs, { Dayjs } from "dayjs";
 
 interface NewRowWithFieldValuesProps {
-  types: string[];
+  transactionTypesOptions: string[];
   categories: string[];
   banks: string[];
 }
@@ -15,7 +16,7 @@ const renderRow = (transaction: Transaction) => {
       <td>{transaction.date.format("DD/MM/YYYY")}</td>
       <td>{transaction.name}</td>
       <td>{transaction.category}</td>
-      <td>{transaction.transaction_types}</td>
+      <td>{transaction.transactionTypes}</td>
       <td>{transaction.bank}</td>
       <td>{transaction.amount}</td>
     </tr>
@@ -23,31 +24,41 @@ const renderRow = (transaction: Transaction) => {
 };
 
 interface TableProps {
-  showNewEntry: Accessor<boolean>;
-  setShowNewEntry: Setter<boolean>;
-  setTransactions: Setter<Transaction[]>;
-  transactions: Accessor<Transaction[]>;
-  transactionTypesOptions: Accessor<string[]>;
-  categories: Accessor<string[]>;
-  banks: Accessor<string[]>;
+  showNewEntry: boolean;
+  setShowNewEntry: Setter<boolean>,
+  setTransactions: Setter<Transaction[]>,
+  transactions: Transaction[],
+  transactionTypesOptions: string[],
+  categories: string[],
+  banks: string[],
 }
 
-const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, transactionTypesOptions, categories, banks }: TableProps) => {
-  const [date, setDate] = createSignal<Dayjs | null>(null);
+type TableComponent = Component<TableProps>;
+
+const Table: TableComponent = (props) => {
+  const [date, setDate] = createSignal<Dayjs>(dayjs());
   const [name, setName] = createSignal<string>("");
-  const [category, setCategory] = createSignal<string | null>(null);
+  const [category, setCategory] = createSignal<string>("");
   const [transactionTypes, setTransactionTypes] = createSignal<Set<string>>(new Set([]));
-  const [bank, setBank] = createSignal<string | null>(null);
+  const [bank, setBank] = createSignal<string>("");
   const [amount, setAmount] = createSignal<number | null>(null);
 
-  const newRowWithFieldValues = ({ types, categories, banks }: NewRowWithFieldValuesProps) => {
+  // createComputed(() =>{
+    // update the local copy whenever the parent updates
+    // this fixes the props not updating issue
+    // https://github.com/solidjs/solid/discussions/287
+    // setCategory(props.categories[0]);
+    // setBank(props.banks[0]);
+  // })
+
+  const newRowWithFieldValues = ({ transactionTypesOptions, categories, banks }: NewRowWithFieldValuesProps) => {
     return (
       <>
         <tr>
           <td>
             <input
               type="date"
-              value={date() !== null ? (date() as Dayjs).format("YYYY-MM-DD") : new Date().toISOString().split("T")[0]}
+              value={(date() as Dayjs).format("YYYY-MM-DD")}
               onChange={(e) => setDate(dayjs(e.target.value))}
             />
           </td>
@@ -55,7 +66,7 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
             <input type="string" value={name()} onChange={(e) => setName(e.target.value)} />
           </td>
           <td>
-            <select onChange={(e) => setCategory(e.target.value)}>
+            <select value={category()} onChange={(e) => setCategory(e.target.value)}>
               {categories.map((val) => (
                 <option>{val}</option>
               ))}
@@ -63,7 +74,7 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
           </td>
           <td>
             <div>
-                {transactionTypesOptions().map((val) => {
+                {transactionTypesOptions.map((val) => {
                   return (
                     <div>
                       <input
@@ -86,7 +97,7 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
               </div>
           </td>
           <td>
-            <select onChange={(e) => setBank(e.target.value)}>
+            <select value={bank()} onChange={(e) => setBank(e.target.value)}>
               {banks.map((val) => (
                 <option>{val}</option>
               ))}
@@ -111,17 +122,17 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
       onSubmit={async (e) => {
         e.preventDefault();
         // TODO: fix bug here and convert to controlled components for row input
-        const transaction = {
-          date: date()!.toDate(),
+        const transaction: Transaction = {
+          date: date()!,
           name: name(),
           category: category(),
-          transaction_type: Array.from(transactionTypes()),
+          transactionTypes: Array.from(transactionTypes()),
           bank: bank(),
-          amount: amount(),
+          amount: amount()!,
         };
-        // await addNewTransaction(transaction);
-        setShowNewEntry(false);
-        setTransactions(await getTransactions());
+        await addNewTransaction(transaction);
+        props.setShowNewEntry(false);
+        props.setTransactions(await getTransactions());
       }}
     >
       <table>
@@ -136,8 +147,8 @@ const Table = ({ showNewEntry, setShowNewEntry, transactions, setTransactions, t
           </tr>
         </thead>
         <tbody>
-          {showNewEntry() && newRowWithFieldValues({ types: transactionTypesOptions(), categories: categories(), banks: banks() })}
-          {transactions().map(renderRow)}
+          {props.showNewEntry && newRowWithFieldValues({ transactionTypesOptions: props.transactionTypesOptions, categories: props.categories, banks: props.banks })}
+          {props.transactions.map(renderRow)}
         </tbody>
       </table>
       <button style={{ visibility: "hidden", width: 0, height: 0, position: "absolute" }} type="submit" />{" "}

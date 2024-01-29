@@ -9,7 +9,7 @@ export type Transaction = {
   date: Dayjs;
   name: string;
   category: string;
-  transaction_types: string[];
+  transactionTypes: string[];
   bank: string | null;
   amount: number;
 };
@@ -22,7 +22,6 @@ const Main = () => {
   const [transactions, setTransactions] = createSignal<Transaction[]>([]);
 
   getTransactions().then((transactions) => setTransactions(transactions));
-
   return (
     <div class="container">
       <h1>My Finances!</h1>
@@ -85,13 +84,13 @@ const Main = () => {
       </div>
       <br />
       <Table
-        showNewEntry={showNewEntry}
+        showNewEntry={showNewEntry()}
         setShowNewEntry={setShowNewEntry}
-        transactions={transactions}
+        transactions={transactions()}
         setTransactions={setTransactions}
-        transactionTypesOptions={transactionTypes}
-        categories={categories}
-        banks={banks}
+        transactionTypesOptions={transactionTypes()}
+        categories={categories()}
+        banks={banks()}
       />
     </div>
   );
