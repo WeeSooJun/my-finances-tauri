@@ -16,7 +16,7 @@ const renderRow = (transaction: Transaction) => {
       <td>{transaction.date.format("DD/MM/YYYY")}</td>
       <td>{transaction.name}</td>
       <td>{transaction.category}</td>
-      <td>{transaction.transactionTypes}</td>
+      <td>{transaction.transactionTypes.reduce((prev, curr) => `${prev}, ${curr}`)}</td>
       <td>{transaction.bank}</td>
       <td>{transaction.amount}</td>
     </tr>
