@@ -34,33 +34,33 @@ pub fn initialize_database(
     tx.execute_batch(
         "
                 CREATE TABLE IF NOT EXISTS transaction_type (
-                    transaction_type_id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL UNIQUE
                 );
                 CREATE TABLE IF NOT EXISTS bank (
-                    bank_id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL UNIQUE
                 );
                 CREATE TABLE IF NOT EXISTS category (
-                    category_id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL UNIQUE
                 );
                 CREATE TABLE IF NOT EXISTS transactions (
-                    transaction_id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
                     date TEXT NOT NULL,
                     name TEXT NOT NULL,
                     category_id INT NOT NULL,
                     bank_id TEXT NOT NULL,
                     amount REAL NOT NULL,
-                    FOREIGN KEY (category_id) REFERENCES category(category_id),
-                    FOREIGN KEY (bank_id) REFERENCES bank(bank_id)
+                    FOREIGN KEY (category_id) REFERENCES category(id),
+                    FOREIGN KEY (bank_id) REFERENCES bank(id)
                 );
                 CREATE TABLE IF NOT EXISTS transaction_type_mapping (
                     transaction_id INT,
                     transaction_type_id INT,
                     PRIMARY KEY (transaction_id, transaction_type_id),
-                    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
-                    FOREIGN KEY (transaction_type_id) REFERENCES transaction_type(transaction_type_id)
+                    FOREIGN KEY (transaction_id) REFERENCES transactions(id),
+                    FOREIGN KEY (transaction_type_id) REFERENCES transaction_type(id)
                 );
 
                 INSERT OR IGNORE INTO category (name) VALUES ('');
@@ -138,19 +138,76 @@ pub fn add_new_bank(new_bank: &str, db: &Connection) -> Result<(), rusqlite::Err
     Ok(())
 }
 
+fn check_string_existence(
+    conn: &Connection,
+    table_name: &str,
+    column_name: &str,
+    search_string: &str,
+) -> Option<i64> {
+    // Build the SQL query
+    let query = format!(
+        "SELECT id FROM {} WHERE {} = ? LIMIT 1",
+        table_name, column_name
+    );
+
+    // Prepare the statement
+    let mut stmt = conn.prepare(&query).unwrap();
+
+    // Execute the query with the search string as a parameter
+    let id: Option<i64> = stmt.query_row(&[search_string], |row| row.get(0)).ok();
+
+    // Return the ID if it exists, None otherwise
+    id
+}
+
+fn insert_if_not_exists(
+    conn: &Connection,
+    table_name: &str,
+    key_column: &str,
+    data: &[String],
+) -> Vec<i64> {
+    let mut last_insert_ids = vec![];
+    for string in data {
+        if let Some(id) = check_string_existence(conn, table_name, key_column, string) {
+            last_insert_ids.push(id)
+        } else {
+            conn.execute(
+                &format!("INSERT INTO {} ({}) VALUES (?)", table_name, key_column),
+                &[string],
+            )
+            .expect("Error executing SQL statement");
+            last_insert_ids.push(conn.last_insert_rowid());
+        }
+    }
+    println!("last insert is {:?}", last_insert_ids);
+    last_insert_ids
+}
+
+fn insert_one_if_not_exists(
+    conn: &Connection,
+    table_name: &str,
+    key_column: &str,
+    data: String,
+) -> Result<i64> {
+    let result = insert_if_not_exists(conn, table_name, key_column, &vec![data]);
+
+    if let Some(&last_insert_id) = result.get(0) {
+        Ok(last_insert_id)
+    } else {
+        Err(rusqlite::Error::ExecuteReturnedResults)
+    }
+}
+
 pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) -> Result<()> {
     let tx = db.transaction()?;
-    let category_id: i32 = tx.query_row(
-        "SELECT category_id FROM category WHERE name = ?",
-        &[&new_transaction.category],
-        |row| row.get(0),
-    )?;
+    println!("new_transaction is {:?}", new_transaction);
+    // TODO: split this into another function for security maybe
+    // to prevent user from hitting the "endpoint" directly and adding new types
+    let category_id = insert_one_if_not_exists(&tx, "category", "name", new_transaction.category)?;
 
-    let bank_id: i32 = tx.query_row(
-        "SELECT bank_id FROM bank WHERE name = ?",
-        &[&new_transaction.bank],
-        |row| row.get(0),
-    )?;
+    let bank_id = insert_one_if_not_exists(&tx, "bank", "name", new_transaction.bank)?;
+
+    // println!("category_id is {}, bank_id is {}", category_id, bank_id);
 
     tx.execute(
         "INSERT INTO 
@@ -164,20 +221,24 @@ pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) ->
             "@amount": new_transaction.amount
         },
     )?;
-    let transaction_id = tx.last_insert_rowid() as i32;
+    let transaction_id = tx.last_insert_rowid();
 
     for transaction_type_name in &new_transaction.transaction_types {
-        let transaction_type_id: i32 = tx.query_row(
-            "SELECT transaction_type_id FROM transaction_type WHERE name = ?",
-            &[transaction_type_name],
-            |row| row.get(0),
-        )?;
+        let transaction_type_ids = insert_if_not_exists(
+            &tx,
+            "transaction_type",
+            "name",
+            &new_transaction.transaction_types,
+        );
+        println!("Transaction Type Ids: {:?}", transaction_type_ids);
 
         if !transaction_type_name.is_empty() {
-            tx.execute(
+            for transaction_type_id in transaction_type_ids {
+                tx.execute(
                 "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
                 &[&transaction_id, &transaction_type_id],
-            )?;
+                )?;
+            }
         }
     }
 
@@ -188,7 +249,7 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
     let mut stmt = db.prepare(
         "
             SELECT
-                t.transaction_id,
+                t.id,
                 t.date,
                 t.name,
                 c.name,
@@ -196,11 +257,12 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
                 b.name,
                 t.amount
             FROM transactions t
-            JOIN category c ON t.category_id = c.category_id
-            LEFT JOIN bank b ON t.bank_id = b.bank_id
-            LEFT JOIN transaction_type_mapping ttm ON t.transaction_id = ttm.transaction_id
-            LEFT JOIN transaction_type tt ON ttm.transaction_type_id = tt.transaction_type_id
-            GROUP BY t.transaction_id;
+            JOIN category c ON t.category_id = c.id
+            LEFT JOIN bank b ON t.bank_id = b.id
+            LEFT JOIN transaction_type_mapping ttm ON t.id = ttm.transaction_id
+            LEFT JOIN transaction_type tt ON ttm.transaction_type_id = tt.id
+            GROUP BY t.id
+            ORDER BY t.date DESC;
         ",
     )?;
     let mut transactions: Vec<Transaction> = Vec::new();
