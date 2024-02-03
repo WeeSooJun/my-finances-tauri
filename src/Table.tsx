@@ -1,4 +1,4 @@
-import { Setter, createComputed, createSignal } from "solid-js";
+import { Setter, createSignal } from "solid-js";
 import type { Component } from "solid-js";
 import { Transaction } from "./Main";
 import { addNewTransaction, getTransactions } from "./api";
