@@ -133,6 +133,12 @@ const Table: TableComponent = (props) => {
         await addNewTransaction(transaction);
         props.setShowNewEntry(false);
         props.setTransactions(await getTransactions());
+        setDate(dayjs);
+        setName("");
+        setCategory("");
+        setTransactionTypes(new Set([]));
+        setBank("");
+        setAmount(null);
       }}
     >
       <table>
