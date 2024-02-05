@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use rusqlite::{ffi::Error, named_params, Connection, Result};
+use rusqlite::{named_params, Connection, Result};
 use std::fs;
 use tauri::AppHandle;
 
@@ -168,6 +168,10 @@ fn insert_if_not_exists(
 ) -> Vec<i64> {
     let mut last_insert_ids = vec![];
     for string in data {
+        // This feels kinda wonky but it'll do for now I guess
+        if table_name == "transaction_type" && string.is_empty() {
+            continue;
+        }
         if let Some(id) = check_string_existence(conn, table_name, key_column, string) {
             last_insert_ids.push(id)
         } else {
@@ -179,7 +183,7 @@ fn insert_if_not_exists(
             last_insert_ids.push(conn.last_insert_rowid());
         }
     }
-    println!("last insert is {:?}", last_insert_ids);
+
     last_insert_ids
 }
 
@@ -207,8 +211,6 @@ pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) ->
 
     let bank_id = insert_one_if_not_exists(&tx, "bank", "name", new_transaction.bank)?;
 
-    // println!("category_id is {}, bank_id is {}", category_id, bank_id);
-
     tx.execute(
         "INSERT INTO 
             transactions (date, name, category_id, bank_id, amount) 
@@ -223,22 +225,19 @@ pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) ->
     )?;
     let transaction_id = tx.last_insert_rowid();
 
-    for transaction_type_name in &new_transaction.transaction_types {
+    if !new_transaction.transaction_types.is_empty() {
         let transaction_type_ids = insert_if_not_exists(
             &tx,
             "transaction_type",
             "name",
             &new_transaction.transaction_types,
         );
-        println!("Transaction Type Ids: {:?}", transaction_type_ids);
 
-        if !transaction_type_name.is_empty() {
-            for transaction_type_id in transaction_type_ids {
-                tx.execute(
+        for transaction_type_id in transaction_type_ids {
+            tx.execute(
                 "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
                 &[&transaction_id, &transaction_type_id],
                 )?;
-            }
         }
     }
 
