@@ -1,6 +1,14 @@
-# Tauri + Solid + Typescript
+# My Finances!
 
-This template should help get you started developing with Tauri, Solid and Typescript in Vite.
+![sample image](sample.png)
+
+## About
+
+This application is to track your finances (think average monthly spending across different categories and banks) and also a way to track cashback. You will be able to define your own transaction categories, types (paylah, paynow, card, online, etc.), and bank.
+
+## Technical
+
+Written using the Tauri Framework (similar to Electon but written in Rust) with a Rust backend, SQLite as local database, SolidJS + TailwindCSS as frontend.
 
 ## Recommended IDE Setup
 
@@ -11,7 +19,3 @@ This template should help get you started developing with Tauri, Solid and Types
 Run
 
 `pnpm tauri dev`
-
-Tailwind Watch
-
-`npx tailwindcss -i ./src/input.css -o ./output.css --watch`
