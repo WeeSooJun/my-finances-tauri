@@ -11,14 +11,22 @@ interface NewRowWithFieldValuesProps {
 }
 
 const renderRow = (transaction: Transaction) => {
+  const [isHovered, setIsHovered] = createSignal(false);
   return (
-    <tr>
+    <tr         
+      classList={{
+        'hover-row': true,
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <td>{transaction.date.format("DD/MM/YYYY")}</td>
       <td>{transaction.name}</td>
       <td>{transaction.category}</td>
       <td>{transaction.transactionTypes.reduce((prev, curr) => `${prev}, ${curr}`)}</td>
       <td>{transaction.bank}</td>
       <td>{transaction.amount}</td>
+      <td class="border-none"><div classList={{ 'opacity-0': !isHovered(),'opacity-1': isHovered() }}>X</div></td> 
     </tr>
   );
 };
