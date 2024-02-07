@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { NewTransaction, Transaction } from "./Main";
 import dayjs from "dayjs";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function convertCamelToSnake(obj: any): any {
   if (typeof obj !== "object" || obj === null) {
     return obj; // If not an object, return as is
@@ -11,8 +12,10 @@ function convertCamelToSnake(obj: any): any {
     return obj.map((item) => convertCamelToSnake(item)); // Recursively convert array elements
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result: any = {};
   for (const key in obj) {
+    // eslint-disable-next-line no-prototype-builtins
     if (obj.hasOwnProperty(key)) {
       const snakeCaseKey = key.replace(/[A-Z]/g, (match) => `_${match.toLowerCase()}`);
       result[snakeCaseKey] = convertCamelToSnake(obj[key]);
