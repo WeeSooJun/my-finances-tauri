@@ -6,6 +6,7 @@ import { open } from "@tauri-apps/api/dialog";
 import Table from "./Table";
 
 export type Transaction = {
+  id: number;
   date: Dayjs;
   name: string;
   category: string;
@@ -13,6 +14,11 @@ export type Transaction = {
   bank: string | null;
   amount: number;
 };
+
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export type NewTransaction = PartialBy<Transaction, "id">;
 
 const Main = () => {
   const [showNewEntry, setShowNewEntry] = createSignal(false);

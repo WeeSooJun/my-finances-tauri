@@ -29,6 +29,7 @@ where
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Transaction {
+    pub id: Option<i64>,
     #[serde(
         serialize_with = "serialize_date",
         deserialize_with = "deserialize_date"

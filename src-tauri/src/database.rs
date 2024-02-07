@@ -268,6 +268,7 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
 
     for row in stmt.query_map([], |row| {
         Ok((
+            row.get(0)?,
             row.get(1)?,
             row.get(2)?,
             row.get(3)?,
@@ -276,7 +277,8 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             row.get(6)?,
         ))
     })? {
-        let (date, name, category, transaction_types, bank, amount): (
+        let (id, date, name, category, transaction_types, bank, amount): (
+            i64,
             NaiveDate,
             String,
             String,
@@ -291,6 +293,7 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             .collect();
 
         let transaction = Transaction {
+            id: Some(id),
             name,
             amount,
             date,
@@ -312,4 +315,27 @@ pub fn get_types_for_field(
     let mut statement = db.prepare(&query)?;
     let rows = statement.query_map([], |row| row.get(0))?;
     rows.collect()
+}
+
+pub fn delete_transaction_by_id(db: &mut Connection, id: i64) -> Result<()> {
+    println!("{}", id);
+    let tx = db.transaction()?;
+    tx.execute(
+        "DELETE FROM 
+            transaction_type_mapping 
+            WHERE transaction_id = @id;",
+        named_params! {
+            "@id": id,
+        },
+    )?;
+    tx.execute(
+        "DELETE FROM 
+            transactions 
+            WHERE id = @id;",
+        named_params! {
+            "@id": id,
+        },
+    )?;
+
+    tx.commit()
 }

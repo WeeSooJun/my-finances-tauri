@@ -126,6 +126,7 @@ fn process_xlsx(app_handle: AppHandle, file_path: String) {
             .map(|s| s.trim().to_string())
             .collect();
         let new_transaction = Transaction {
+            id: None,
             date: NaiveDate::parse_from_str(&date, "%d/%m/%Y").unwrap(),
             name,
             category,
@@ -134,6 +135,14 @@ fn process_xlsx(app_handle: AppHandle, file_path: String) {
             bank,
         };
         app_handle.db_mut(|db| database::add_new_transaction(new_transaction, db));
+    }
+}
+
+#[tauri::command]
+fn delete_transaction(app_handle: AppHandle, id: i64) -> bool {
+    match app_handle.db_mut(|db| database::delete_transaction_by_id(db, id)) {
+        Ok(_) => true,
+        Err(_) => false,
     }
 }
 
@@ -153,7 +162,8 @@ fn main() -> Result<()> {
             is_database_initialized,
             set_database_passphrase,
             get_types_for_field,
-            process_xlsx
+            process_xlsx,
+            delete_transaction
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
