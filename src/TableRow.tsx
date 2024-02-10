@@ -1,5 +1,5 @@
 import { Setter, createSignal } from "solid-js";
-import { Transaction } from "./Main";
+import { NewTransaction, Transaction } from "./Main";
 import dayjs, { Dayjs } from "dayjs";
 
 interface TableRowProps {
@@ -23,11 +23,13 @@ const TableRow = ({ transactionInput, transactionTypesOptions, categories, banks
   // const [bank, setBank] = createSignal<string>(transaction.bank);
   // const [amount, setAmount] = createSignal<number>(transaction.amount);
 
+  const emptyStringArray: string[] = [];
+
   const transaction = transactionInput ? transactionInput : {
     date: dayjs(),
     name: "",
     category: "",
-    transactionTypes: [],
+    transactionTypes: emptyStringArray,
     bank: "",
     amount: null
   }
