@@ -11,11 +11,10 @@ export type Transaction = {
   name: string;
   category: string;
   transactionTypes: string[];
-  bank: string | null;
+  bank: string;
   amount: number;
 };
 
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 export type NewTransaction = PartialBy<Transaction, "id">;

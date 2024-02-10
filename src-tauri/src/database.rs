@@ -318,7 +318,6 @@ pub fn get_types_for_field(
 }
 
 pub fn delete_transaction_by_id(db: &mut Connection, id: i64) -> Result<()> {
-    println!("{}", id);
     let tx = db.transaction()?;
     tx.execute(
         "DELETE FROM 

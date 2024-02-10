@@ -3,8 +3,10 @@ import type { Component } from "solid-js";
 import { NewTransaction, Transaction } from "./Main";
 import { addNewTransaction, deleteTransaction, getTransactions } from "./api";
 import dayjs, { Dayjs } from "dayjs";
+import TableRow from "./TableRow";
 
-interface NewRowWithFieldValuesProps {
+interface RowWithFieldValuesProps {
+  transaction?: Transaction;
   transactionTypesOptions: string[];
   categories: string[];
   banks: string[];
@@ -19,6 +21,7 @@ const renderRow = (transaction: Transaction, onDeleteClick: (id: number) => Prom
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      // onDblClick={onDblClick}
     >
       <td>{transaction.date.format("DD/MM/YYYY")}</td>
       <td>{transaction.name}</td>
@@ -51,7 +54,7 @@ const Table: TableComponent = (props) => {
   const [date, setDate] = createSignal<Dayjs>(dayjs());
   const [name, setName] = createSignal<string>("");
   const [category, setCategory] = createSignal<string>("");
-  const [transactionTypes, setTransactionTypes] = createSignal<Set<string>>(new Set([]));
+  const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
   const [bank, setBank] = createSignal<string>("");
   const [amount, setAmount] = createSignal<number | null>(null);
 
@@ -68,65 +71,62 @@ const Table: TableComponent = (props) => {
     props.setTransactions(await getTransactions());
   };
 
-  const newRowWithFieldValues = ({ transactionTypesOptions, categories, banks }: NewRowWithFieldValuesProps) => {
-    return (
-      <>
-        <tr>
-          <td>
-            <input type="date" value={(date() as Dayjs).format("YYYY-MM-DD")} onChange={(e) => setDate(dayjs(e.target.value))} />
-          </td>
-          <td>
-            <input type="string" value={name()} onChange={(e) => setName(e.target.value)} />
-          </td>
-          <td>
-            <select value={category()} onChange={(e) => setCategory(e.target.value)}>
-              {categories.map((val) => (
-                <option>{val}</option>
-              ))}
-            </select>
-          </td>
-          <td>
-            <div>
-              {transactionTypesOptions.map((val) => {
-                return (
-                  <div>
-                    <input
-                      type="checkbox"
-                      value={val}
-                      checked={transactionTypes().has(val)}
-                      onChange={(e) =>
-                        e.target.checked
-                          ? setTransactionTypes((prev) => prev.add(e.target.value))
-                          : setTransactionTypes((prev) => {
-                              prev.delete(e.target.value);
-                              return prev;
-                            })
-                      }
-                    />
-                    <label for={val}>{val}</label>
-                  </div>
-                );
-              })}
-            </div>
-          </td>
-          <td>
-            <select value={bank()} onChange={(e) => setBank(e.target.value)}>
-              {banks.map((val) => (
-                <option>{val}</option>
-              ))}
-            </select>
-          </td>
-          <td>
-            <input
-              onChange={(e) => {
-                setAmount(parseFloat(e.target.value));
-              }}
-              value={amount() !== null ? (amount() as number) : ""}
-            />
-          </td>
-        </tr>
-      </>
-    );
+  const rowWithFieldValues = ({ transactionTypesOptions, categories, banks }: RowWithFieldValuesProps) => {
+  return (
+    <>
+            <tr>
+        <td>
+          <input type="date" value={(date() as Dayjs).format("YYYY-MM-DD")} onChange={(e) => setDate(dayjs(e.target.value))} />
+        </td>
+        <td>
+          <input type="string" value={name()} onChange={(e) => setName(e.target.value)} />
+        </td>
+        <td>
+          <select value={category()} onChange={(e) => setCategory(e.target.value)}>
+            {categories.map((val) => (
+              <option>{val}</option>
+            ))}
+          </select>
+        </td>
+        <td>
+          <div>
+            {transactionTypesOptions.map((val) => {
+              return (
+                <div>
+                  <input
+                    type="checkbox"
+                    value={val}
+                    checked={transactionTypes().includes(val)}
+                    onChange={(e) =>
+                      e.target.checked
+                        ? setTransactionTypes(prev => prev.concat([e.target.value]))
+                        : setTransactionTypes(prev => prev.filter(ele => ele !== e.target.value))
+                    }
+                  />
+                  <label for={val}>{val}</label>
+                </div>
+              );
+            })}
+          </div>
+        </td>
+        <td>
+          <select value={bank()} onChange={(e) => setBank(e.target.value)}>
+            {banks.map((val) => (
+              <option>{val}</option>
+            ))}
+          </select>
+        </td>
+        <td>
+          <input
+            onChange={(e) => {
+              setAmount(parseFloat(e.target.value));
+            }}
+            value={amount() !== null ? (amount() as number) : ""}
+          />
+        </td>
+      </tr>
+        </>
+  );
   };
 
   return (
@@ -167,7 +167,7 @@ const Table: TableComponent = (props) => {
         </thead>
         <tbody>
           {props.showNewEntry &&
-            newRowWithFieldValues({ transactionTypesOptions: props.transactionTypesOptions, categories: props.categories, banks: props.banks })}
+            TableRow({ transactionTypesOptions: props.transactionTypesOptions, categories: props.categories, banks: props.banks, setDate, setName, setCategory, setTransactionTypes, setBank, setAmount })}
           {props.transactions.map((ele) => renderRow(ele, onDeleteClick))}
         </tbody>
       </table>
