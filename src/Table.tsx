@@ -46,7 +46,7 @@ const Table: TableComponent = (props) => {
     queryFn: async () => {
       const response = await getTransactions();
       return response;
-    }
+    },
   }));
 
   const onDeleteClick = async (id: number) => {

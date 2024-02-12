@@ -17,16 +17,7 @@ interface TableRowProps {
   setAmount: Setter<number>;
 }
 
-const TableRow = ({
-  transactionInput,
-  onDeleteClick,
-  setDate,
-  setName,
-  setCategory,
-  setTransactionTypes,
-  setBank,
-  setAmount,
-}: TableRowProps) => {
+const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCategory, setTransactionTypes, setBank, setAmount }: TableRowProps) => {
   // const [date, setDate] = createSignal<Dayjs>(transaction.date);
   // const [name, setName] = createSignal<string>(transaction.name);
   // const [category, setCategory] = createSignal<string>(transaction.category);
@@ -39,21 +30,21 @@ const TableRow = ({
     queryFn: async () => {
       const response = await getTypesForField("category");
       return response;
-    }
+    },
   }));
   const banksQueryResult = createQuery(() => ({
     queryKey: ["banksData"],
     queryFn: async () => {
       const response = await getTypesForField("bank");
       return response;
-    }
+    },
   }));
   const transactionTypeOptionsQueryResult = createQuery(() => ({
     queryKey: ["transactionTypeOptionsData"],
     queryFn: async () => {
       const response = await getTypesForField("transaction_type");
       return response;
-    }
+    },
   }));
 
   const [isEdit, setIsEdit] = createSignal(false);
@@ -107,11 +98,14 @@ const TableRow = ({
         </tr>
       )}
       {(transactionInput === undefined || isEdit()) && (
-        <tr tabIndex="0" onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setIsEdit(false);
-          }
-        }}>
+        <tr
+          tabIndex="0"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setIsEdit(false);
+            }
+          }}
+        >
           <td>
             <input type="date" value={(transaction.date as Dayjs).format("YYYY-MM-DD")} onChange={(e) => setDate(dayjs(e.target.value))} />
           </td>
@@ -120,14 +114,19 @@ const TableRow = ({
           </td>
           <td>
             <select value={transaction.category} onChange={(e) => setCategory(e.target.value)}>
-              {categoriesQueryResult.data!.map((val) => ( // TODO: deal with loading states later
-                <option>{val}</option>
-              ))}
+              {categoriesQueryResult.data!.map(
+                (
+                  val, // TODO: deal with loading states later
+                ) => (
+                  <option>{val}</option>
+                ),
+              )}
             </select>
           </td>
           <td>
             <div>
-              {transactionTypeOptionsQueryResult.data!.map((val) => { // TODO: deal with loading states later
+              {transactionTypeOptionsQueryResult.data!.map((val) => {
+                // TODO: deal with loading states later
                 return (
                   <div>
                     <input
@@ -138,7 +137,7 @@ const TableRow = ({
                         e.target.checked
                           ? setTransactionTypes((prev) => prev.concat([e.target.value]))
                           : setTransactionTypes((prev) => {
-                              return prev.filter(ele => e.target.value !== ele);
+                              return prev.filter((ele) => e.target.value !== ele);
                             })
                       }
                     />
@@ -150,9 +149,13 @@ const TableRow = ({
           </td>
           <td>
             <select value={transaction.bank} onChange={(e) => setBank(e.target.value)}>
-              {banksQueryResult.data!.map((val) => ( // TODO: deal with loading states later
-                <option>{val}</option>
-              ))}
+              {banksQueryResult.data!.map(
+                (
+                  val, // TODO: deal with loading states later
+                ) => (
+                  <option>{val}</option>
+                ),
+              )}
             </select>
           </td>
           <td>

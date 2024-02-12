@@ -26,28 +26,28 @@ const Main = () => {
     queryFn: async () => {
       const response = await getTypesForField("category");
       return response;
-    }
+    },
   }));
   const banksQueryResult = createQuery(() => ({
     queryKey: ["banksData"],
     queryFn: async () => {
       const response = await getTypesForField("bank");
       return response;
-    }
+    },
   }));
   const transactionTypeOptionsQueryResult = createQuery(() => ({
     queryKey: ["transactionTypeOptionsData"],
     queryFn: async () => {
       const response = await getTypesForField("transaction_type");
       return response;
-    }
+    },
   }));
   const transactionsQueryResult = createQuery(() => ({
     queryKey: ["transactionsData"],
     queryFn: async () => {
       const response = await getTransactions();
       return response;
-    }
+    },
   }));
 
   const [showNewEntry, setShowNewEntry] = createSignal(false);
