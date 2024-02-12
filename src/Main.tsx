@@ -42,10 +42,18 @@ const Main = () => {
       return response;
     }
   }));
-  const [showNewEntry, setShowNewEntry] = createSignal(false);
-  const [transactions, setTransactions] = createSignal<Transaction[]>([]);
+  const transactionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionsData"],
+    queryFn: async () => {
+      const response = await getTransactions();
+      return response;
+    }
+  }));
 
-  getTransactions().then((transactions) => setTransactions(transactions));
+  const [showNewEntry, setShowNewEntry] = createSignal(false);
+  // const [transactions, setTransactions] = createSignal<Transaction[]>([]);
+
+  // getTransactions().then((transactions) => setTransactions(transactions));
   return (
     <div class="container">
       <h1>My Finances!</h1>
@@ -86,7 +94,7 @@ const Main = () => {
             });
             if (selectedFile !== null && !Array.isArray(selectedFile)) {
               await processXlsx(selectedFile);
-              setTransactions(await getTransactions());
+              await transactionsQueryResult.refetch();
             } else {
               console.error("Error trying to send file name to rust backend");
             }
@@ -110,8 +118,7 @@ const Main = () => {
       <Table
         showNewEntry={showNewEntry()}
         setShowNewEntry={setShowNewEntry}
-        transactions={transactions()}
-        setTransactions={setTransactions}
+        transactions={transactionsQueryResult.data!}
         transactionTypesOptions={transactionTypeOptionsQueryResult.data!} // TODO: handle loading states later
         categories={categoriesQueryResult.data!} // TODO: handle loading states later
         banks={banksQueryResult.data!} // TODO: handle loading states later

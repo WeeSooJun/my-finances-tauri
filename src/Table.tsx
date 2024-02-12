@@ -4,6 +4,7 @@ import { NewTransaction, Transaction } from "./Main";
 import { addNewTransaction, deleteTransaction, getTransactions } from "./api";
 import dayjs, { Dayjs } from "dayjs";
 import TableRow from "./TableRow";
+import { createQuery } from "@tanstack/solid-query";
 
 interface RowWithFieldValuesProps {
   transaction?: Transaction;
@@ -15,7 +16,7 @@ interface RowWithFieldValuesProps {
 interface TableProps {
   showNewEntry: boolean;
   setShowNewEntry: Setter<boolean>;
-  setTransactions: Setter<Transaction[]>;
+  // setTransactions: Setter<Transaction[]>;
   transactions: Transaction[];
   transactionTypesOptions: string[];
   categories: string[];
@@ -40,10 +41,17 @@ const Table: TableComponent = (props) => {
   // setCategory(props.categories[0]);
   // setBank(props.banks[0]);
   // })
+  const transactionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionsData"],
+    queryFn: async () => {
+      const response = await getTransactions();
+      return response;
+    }
+  }));
+
   const onDeleteClick = async (id: number) => {
-    console.log(id);
     await deleteTransaction(id);
-    props.setTransactions(await getTransactions());
+    await transactionsQueryResult.refetch();
   };
 
   return (
@@ -56,13 +64,13 @@ const Table: TableComponent = (props) => {
           date: date()!,
           name: name(),
           category: category(),
-          transactionTypes: Array.from(transactionTypes()),
+          transactionTypes: transactionTypes(),
           bank: bank(),
           amount: amount()!,
         };
         await addNewTransaction(transaction);
         props.setShowNewEntry(false);
-        props.setTransactions(await getTransactions());
+        await transactionsQueryResult.refetch();
         setDate(dayjs);
         setName("");
         setCategory("");
@@ -85,9 +93,6 @@ const Table: TableComponent = (props) => {
         <tbody>
           {props.showNewEntry &&
             TableRow({
-              transactionTypesOptions: props.transactionTypesOptions,
-              categories: props.categories,
-              banks: props.banks,
               setDate,
               setName,
               setCategory,
@@ -100,10 +105,7 @@ const Table: TableComponent = (props) => {
               {(txn, i) =>
                 TableRow({
                   transactionInput: txn,
-                  transactionTypesOptions: props.transactionTypesOptions,
                   onDeleteClick,
-                  categories: props.categories,
-                  banks: props.banks,
                   setDate,
                   setName,
                   setCategory,

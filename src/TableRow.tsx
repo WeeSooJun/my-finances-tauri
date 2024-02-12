@@ -1,29 +1,25 @@
 import { Setter, createSignal } from "solid-js";
 import { NewTransaction, Transaction } from "./Main";
 import dayjs, { Dayjs } from "dayjs";
+import { createQuery } from "@tanstack/solid-query";
+import { getTypesForField } from "./api";
 
 interface TableRowProps {
   isEdit?: boolean;
   setEditTransactionId?: Setter<number>;
   transactionInput?: Transaction;
-  transactionTypesOptions: string[];
   onDeleteClick?: (id: number) => Promise<void>;
-  categories: string[];
-  banks: string[];
   setDate: Setter<Dayjs>;
   setName: Setter<string>;
   setCategory: Setter<string>;
-  setTransactionTypes: Setter<Set<string>>;
+  setTransactionTypes: Setter<string[]>;
   setBank: Setter<string>;
   setAmount: Setter<number>;
 }
 
 const TableRow = ({
   transactionInput,
-  transactionTypesOptions,
   onDeleteClick,
-  categories,
-  banks,
   setDate,
   setName,
   setCategory,
@@ -37,6 +33,29 @@ const TableRow = ({
   // const [transactionTypes, setTransactionTypes] = createSignal<Set<string>>(new Set(transaction.transactionTypes));
   // const [bank, setBank] = createSignal<string>(transaction.bank);
   // const [amount, setAmount] = createSignal<number>(transaction.amount);
+
+  const categoriesQueryResult = createQuery(() => ({
+    queryKey: ["categoriesData"],
+    queryFn: async () => {
+      const response = await getTypesForField("category");
+      return response;
+    }
+  }));
+  const banksQueryResult = createQuery(() => ({
+    queryKey: ["banksData"],
+    queryFn: async () => {
+      const response = await getTypesForField("bank");
+      return response;
+    }
+  }));
+  const transactionTypeOptionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionTypeOptionsData"],
+    queryFn: async () => {
+      const response = await getTypesForField("transaction_type");
+      return response;
+    }
+  }));
+
   const [isEdit, setIsEdit] = createSignal(false);
   const [isHovered, setIsHovered] = createSignal(false);
 
@@ -45,7 +64,7 @@ const TableRow = ({
   const transaction = transactionInput
     ? transactionInput
     : {
-        id: 0, // do something about this 0 later
+        id: 0, // TODO: do something about this 0 later
         date: dayjs(),
         name: "",
         category: "",
@@ -101,14 +120,14 @@ const TableRow = ({
           </td>
           <td>
             <select value={transaction.category} onChange={(e) => setCategory(e.target.value)}>
-              {categories.map((val) => (
+              {categoriesQueryResult.data!.map((val) => ( // TODO: deal with loading states later
                 <option>{val}</option>
               ))}
             </select>
           </td>
           <td>
             <div>
-              {transactionTypesOptions.map((val) => {
+              {transactionTypeOptionsQueryResult.data!.map((val) => { // TODO: deal with loading states later
                 return (
                   <div>
                     <input
@@ -117,10 +136,9 @@ const TableRow = ({
                       checked={transaction.transactionTypes.includes(val)}
                       onChange={(e) =>
                         e.target.checked
-                          ? setTransactionTypes((prev) => prev.add(e.target.value))
+                          ? setTransactionTypes((prev) => prev.concat([e.target.value]))
                           : setTransactionTypes((prev) => {
-                              prev.delete(e.target.value);
-                              return prev;
+                              return prev.filter(ele => e.target.value !== ele);
                             })
                       }
                     />
@@ -132,7 +150,7 @@ const TableRow = ({
           </td>
           <td>
             <select value={transaction.bank} onChange={(e) => setBank(e.target.value)}>
-              {banks.map((val) => (
+              {banksQueryResult.data!.map((val) => ( // TODO: deal with loading states later
                 <option>{val}</option>
               ))}
             </select>
