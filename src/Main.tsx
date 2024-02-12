@@ -43,8 +43,6 @@ const Main = () => {
     }
   }));
   const [showNewEntry, setShowNewEntry] = createSignal(false);
-  // const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
-  // const [banks, setBanks] = createSignal<string[]>([]);
   const [transactions, setTransactions] = createSignal<Transaction[]>([]);
 
   getTransactions().then((transactions) => setTransactions(transactions));
@@ -114,7 +112,7 @@ const Main = () => {
         setShowNewEntry={setShowNewEntry}
         transactions={transactions()}
         setTransactions={setTransactions}
-        transactionTypesOptions={transactionTypeOptionsQueryResult.data!}
+        transactionTypesOptions={transactionTypeOptionsQueryResult.data!} // TODO: handle loading states later
         categories={categoriesQueryResult.data!} // TODO: handle loading states later
         banks={banksQueryResult.data!} // TODO: handle loading states later
       />
