@@ -4,6 +4,7 @@ import NewFieldType from "./NewFieldType";
 import { Dayjs } from "dayjs";
 import { open } from "@tauri-apps/api/dialog";
 import Table from "./Table";
+import { createQuery } from "@tanstack/solid-query";
 
 export type Transaction = {
   id: number;
@@ -20,10 +21,30 @@ type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type NewTransaction = PartialBy<Transaction, "id">;
 
 const Main = () => {
+  const categoriesQueryResult = createQuery(() => ({
+    queryKey: ["categoriesData"],
+    queryFn: async () => {
+      const response = await getTypesForField("category");
+      return response;
+    }
+  }));
+  const banksQueryResult = createQuery(() => ({
+    queryKey: ["banksData"],
+    queryFn: async () => {
+      const response = await getTypesForField("bank");
+      return response;
+    }
+  }));
+  const transactionTypeOptionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionTypeOptionsData"],
+    queryFn: async () => {
+      const response = await getTypesForField("transaction_type");
+      return response;
+    }
+  }));
   const [showNewEntry, setShowNewEntry] = createSignal(false);
-  const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
-  const [categories, setCategories] = createSignal<string[]>([]);
-  const [banks, setBanks] = createSignal<string[]>([]);
+  // const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
+  // const [banks, setBanks] = createSignal<string[]>([]);
   const [transactions, setTransactions] = createSignal<Transaction[]>([]);
 
   getTransactions().then((transactions) => setTransactions(transactions));
@@ -35,21 +56,21 @@ const Main = () => {
           fieldName="category"
           fieldSubmit={async (e) => {
             addNewCategory(e);
-            setCategories(await getTypesForField("category"));
+            await categoriesQueryResult.refetch();
           }}
         />
         <NewFieldType
           fieldName="transactionType"
           fieldSubmit={async (e) => {
             addNewTransactionType(e);
-            setTransactionTypes(await getTypesForField("transaction_type"));
+            await transactionTypeOptionsQueryResult.refetch();
           }}
         />
         <NewFieldType
           fieldName="bank"
           fieldSubmit={async (e) => {
             addNewBank(e);
-            setBanks(await getTypesForField("bank"));
+            await banksQueryResult.refetch();
           }}
         />
       </div>
@@ -78,9 +99,9 @@ const Main = () => {
         <button
           onClick={async () => {
             setShowNewEntry((current) => !current);
-            setCategories(await getTypesForField("category"));
-            setTransactionTypes(await getTypesForField("transaction_type"));
-            setBanks(await getTypesForField("bank"));
+            await categoriesQueryResult.refetch();
+            await transactionTypeOptionsQueryResult.refetch();
+            await banksQueryResult.refetch();
           }}
         >
           {showNewEntry() && "Cancel"}
@@ -93,9 +114,9 @@ const Main = () => {
         setShowNewEntry={setShowNewEntry}
         transactions={transactions()}
         setTransactions={setTransactions}
-        transactionTypesOptions={transactionTypes()}
-        categories={categories()}
-        banks={banks()}
+        transactionTypesOptions={transactionTypeOptionsQueryResult.data!}
+        categories={categoriesQueryResult.data!} // TODO: handle loading states later
+        banks={banksQueryResult.data!} // TODO: handle loading states later
       />
     </div>
   );
