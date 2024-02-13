@@ -6,13 +6,6 @@ import dayjs, { Dayjs } from "dayjs";
 import TableRow from "./TableRow";
 import { createQuery } from "@tanstack/solid-query";
 
-interface RowWithFieldValuesProps {
-  transaction?: Transaction;
-  transactionTypesOptions: string[];
-  categories: string[];
-  banks: string[];
-}
-
 interface TableProps {
   showNewEntry: boolean;
   setShowNewEntry: Setter<boolean>;
@@ -111,7 +104,7 @@ const Table: TableComponent = (props) => {
             })}
           {
             <For each={props.transactions}>
-              {(txn, i) =>
+              {(txn) =>
                 TableRow({
                   editTransactionId,
                   setEditTransactionId,

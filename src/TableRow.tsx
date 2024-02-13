@@ -1,5 +1,5 @@
 import { Accessor, Component, Setter, createSignal } from "solid-js";
-import { NewTransaction, Transaction } from "./Main";
+import { Transaction } from "./Main";
 import dayjs, { Dayjs } from "dayjs";
 import { createQuery } from "@tanstack/solid-query";
 import { getTypesForField } from "./api";

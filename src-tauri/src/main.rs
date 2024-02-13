@@ -45,17 +45,6 @@ fn set_database_passphrase(app_handle: AppHandle, passphrase: String) -> bool {
     true
 }
 
-// #[tauri::command]
-// fn greet(name: &str) -> String {
-//     format!("Hello, {}! You've been greeted from Rust!", name)
-// }
-
-// #[tauri::command]
-// fn return_string(word: String) -> String {
-//     println!("{}", word);
-//     return word;
-// }
-
 #[tauri::command]
 fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> bool {
     match app_handle.db(|db| database::add_new_transaction_type(&new_type, db)) {

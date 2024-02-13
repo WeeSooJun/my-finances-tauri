@@ -204,7 +204,6 @@ fn insert_one_if_not_exists(
 
 pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) -> Result<()> {
     let tx = db.transaction()?;
-    println!("new_transaction is {:?}", new_transaction);
     // TODO: split this into another function for security maybe
     // to prevent user from hitting the "endpoint" directly and adding new types
     let category_id = insert_one_if_not_exists(&tx, "category", "name", new_transaction.category)?;
@@ -376,8 +375,6 @@ pub fn edit_transaction(db: &mut Connection, transaction: Transaction) -> Result
         },
     )?;
 
-    println!("transactions insert working");
-
     // TODO: There could be a better way to handle update,
     // this is the simplest for now
     tx.execute(
@@ -388,8 +385,6 @@ pub fn edit_transaction(db: &mut Connection, transaction: Transaction) -> Result
             "@transaction_id": transaction.id,
         },
     )?;
-
-    println!("delete working");
 
     if !transaction.transaction_types.is_empty() {
         let transaction_type_ids = insert_if_not_exists(
