@@ -1,12 +1,12 @@
-import { Setter, createSignal } from "solid-js";
+import { Accessor, Component, Setter, createSignal } from "solid-js";
 import { NewTransaction, Transaction } from "./Main";
 import dayjs, { Dayjs } from "dayjs";
 import { createQuery } from "@tanstack/solid-query";
 import { getTypesForField } from "./api";
 
 interface TableRowProps {
-  isEdit?: boolean;
-  setEditTransactionId?: Setter<number>;
+  editTransactionId?: Accessor<number | null>;
+  setEditTransactionId?: Setter<number | null>;
   transactionInput?: Transaction;
   onDeleteClick?: (id: number) => Promise<void>;
   setDate: Setter<Dayjs>;
@@ -17,7 +17,9 @@ interface TableRowProps {
   setAmount: Setter<number>;
 }
 
-const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCategory, setTransactionTypes, setBank, setAmount }: TableRowProps) => {
+type TableRowComponent = Component<TableRowProps>;
+
+const TableRow: TableRowComponent = (props) => {
   // const [date, setDate] = createSignal<Dayjs>(transaction.date);
   // const [name, setName] = createSignal<string>(transaction.name);
   // const [category, setCategory] = createSignal<string>(transaction.category);
@@ -47,13 +49,12 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
     },
   }));
 
-  const [isEdit, setIsEdit] = createSignal(false);
   const [isHovered, setIsHovered] = createSignal(false);
 
   const emptyStringArray: string[] = [];
 
-  const transaction = transactionInput
-    ? transactionInput
+  const transaction = props.transactionInput
+    ? props.transactionInput
     : {
         id: 0, // TODO: do something about this 0 later
         date: dayjs(),
@@ -64,9 +65,11 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
         amount: null,
       };
 
+  // console.log(!props.editTransactionId);
+
   return (
     <>
-      {!isEdit() && onDeleteClick && (
+      {props.transactionInput !== undefined && props.editTransactionId!() !== transaction.id   && props.setEditTransactionId && props.onDeleteClick && (
         <tr
           classList={{
             "hover-row": true,
@@ -74,13 +77,16 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onDblClick={() => {
-            setIsEdit(true);
+            // hate this but SolidJS still has not type guard
+            // already checked on top
+            props.setEditTransactionId!(props.transactionInput!.id);
           }}
           tabIndex="0"
           onKeyDown={(event) => {
-            console.log(event);
             if (event.key === "Escape") {
-              setIsEdit(false);
+              // hate this but SolidJS still has not type guard
+              // already checked on top
+              props.setEditTransactionId!(null);
             }
           }}
         >
@@ -91,29 +97,31 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
           <td>{transaction.bank}</td>
           <td>{transaction.amount}</td>
           <td class="border-none">
-            <button type="button" classList={{ "opacity-0": !isHovered(), "opacity-1": isHovered() }} onClick={() => onDeleteClick(transaction.id)}>
+            <button type="button" classList={{ "opacity-0": !isHovered(), "opacity-1": isHovered() }} onClick={() => props.onDeleteClick!(transaction.id)}>
               X
             </button>
           </td>
         </tr>
       )}
-      {(transactionInput === undefined || isEdit()) && (
+      {(props.transactionInput === undefined || props.editTransactionId!() === transaction.id) && (
         <tr
           tabIndex="0"
           onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setIsEdit(false);
+            if (event.key === "Escape" && props.setEditTransactionId !== undefined) {
+              // implementation of new and edit row is a bit convoluted now as
+              // exit mechanism for edit is ESC but for create it's cancel button
+              props.setEditTransactionId(null);
             }
           }}
         >
           <td>
-            <input type="date" value={(transaction.date as Dayjs).format("YYYY-MM-DD")} onChange={(e) => setDate(dayjs(e.target.value))} />
+            <input type="date" value={(transaction.date as Dayjs).format("YYYY-MM-DD")} onChange={(e) => props.setDate(dayjs(e.target.value))} />
           </td>
           <td>
-            <input type="string" value={transaction.name} onChange={(e) => setName(e.target.value)} />
+            <input type="string" value={transaction.name} onChange={(e) => props.setName(e.target.value)} />
           </td>
           <td>
-            <select value={transaction.category} onChange={(e) => setCategory(e.target.value)}>
+            <select value={transaction.category} onChange={(e) => props.setCategory(e.target.value)}>
               {categoriesQueryResult.data!.map(
                 (
                   val, // TODO: deal with loading states later
@@ -135,8 +143,8 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
                       checked={transaction.transactionTypes.includes(val)}
                       onChange={(e) =>
                         e.target.checked
-                          ? setTransactionTypes((prev) => prev.concat([e.target.value]))
-                          : setTransactionTypes((prev) => {
+                          ? props.setTransactionTypes((prev) => prev.concat([e.target.value]))
+                          : props.setTransactionTypes((prev) => {
                               return prev.filter((ele) => e.target.value !== ele);
                             })
                       }
@@ -148,7 +156,7 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
             </div>
           </td>
           <td>
-            <select value={transaction.bank} onChange={(e) => setBank(e.target.value)}>
+            <select value={transaction.bank} onChange={(e) => props.setBank(e.target.value)}>
               {banksQueryResult.data!.map(
                 (
                   val, // TODO: deal with loading states later
@@ -161,7 +169,7 @@ const TableRow = ({ transactionInput, onDeleteClick, setDate, setName, setCatego
           <td>
             <input
               onChange={(e) => {
-                setAmount(parseFloat(e.target.value));
+                props.setAmount(parseFloat(e.target.value));
               }}
               value={transaction.amount !== null ? (transaction.amount as number) : ""}
             />

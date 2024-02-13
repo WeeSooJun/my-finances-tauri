@@ -59,6 +59,11 @@ async function deleteTransaction(id: number): Promise<boolean> {
   return await invoke("delete_transaction", { id });
 }
 
+async function editTransaction(transaction: Transaction): Promise<boolean> {
+  const transactionRequest: TransactionRequest = { ...convertCamelToSnake(transaction), date: transaction.date.format("YYYY-MM-DD") };
+  return await invoke("edit_transaction", { transaction: transactionRequest})
+}
+
 type RawTransaction = {
   id: number;
   date: string;
@@ -79,4 +84,4 @@ async function getTypesForField(fieldName: string): Promise<string[]> {
   return await invoke("get_types_for_field", { fieldName });
 }
 
-export { addNewCategory, addNewTransactionType, addNewBank, getTypesForField, addNewTransaction, getTransactions, processXlsx, deleteTransaction };
+export { addNewCategory, addNewTransactionType, addNewBank, getTypesForField, addNewTransaction, getTransactions, processXlsx, deleteTransaction, editTransaction };

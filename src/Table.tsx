@@ -1,7 +1,7 @@
 import { For, Setter, createSignal } from "solid-js";
 import type { Component } from "solid-js";
 import { NewTransaction, Transaction } from "./Main";
-import { addNewTransaction, deleteTransaction, getTransactions } from "./api";
+import { addNewTransaction, deleteTransaction, editTransaction, getTransactions } from "./api";
 import dayjs, { Dayjs } from "dayjs";
 import TableRow from "./TableRow";
 import { createQuery } from "@tanstack/solid-query";
@@ -60,7 +60,7 @@ const Table: TableComponent = (props) => {
       onSubmit={async (e) => {
         e.preventDefault();
         // TODO: fix bug here and convert to controlled components for row input
-        const transaction: NewTransaction = {
+        let transaction: NewTransaction = {
           date: date()!,
           name: name(),
           category: category(),
@@ -68,8 +68,17 @@ const Table: TableComponent = (props) => {
           bank: bank(),
           amount: amount()!,
         };
-        await addNewTransaction(transaction);
-        props.setShowNewEntry(false);
+        if (editTransactionId() === null) {
+          await addNewTransaction(transaction);
+          props.setShowNewEntry(false);
+        } else {
+          let transactionToUpdate: Transaction = {
+            id: editTransactionId() as number, // SolidJS type guard cmi https://github.com/microsoft/TypeScript/issues/53178
+            ...transaction
+          }
+          await editTransaction(transactionToUpdate);
+          setEditTransactionId(null);
+        }
         await transactionsQueryResult.refetch();
         setDate(dayjs);
         setName("");
@@ -104,6 +113,8 @@ const Table: TableComponent = (props) => {
             <For each={props.transactions}>
               {(txn, i) =>
                 TableRow({
+                  editTransactionId,
+                  setEditTransactionId,
                   transactionInput: txn,
                   onDeleteClick,
                   setDate,

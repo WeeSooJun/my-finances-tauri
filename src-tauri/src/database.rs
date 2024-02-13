@@ -338,3 +338,74 @@ pub fn delete_transaction_by_id(db: &mut Connection, id: i64) -> Result<()> {
 
     tx.commit()
 }
+
+pub fn get_category_id(db: &Connection, category: &str) -> i64 {
+    let query = format!("SELECT id FROM category WHERE name = ?");
+    let mut stmt = db.prepare(&query).unwrap();
+    stmt.query_row([category], |row| row.get(0)).unwrap()
+}
+
+pub fn get_bank_id(db: &Connection, bank: &str) -> i64 {
+    let query = format!("SELECT id FROM bank WHERE name = ?");
+    let mut stmt = db.prepare(&query).unwrap();
+    stmt.query_row([bank], |row| row.get(0)).unwrap()
+}
+
+pub fn edit_transaction(db: &mut Connection, transaction: Transaction) -> Result<()> {
+    let category_id = get_category_id(db, &transaction.category);
+    let bank_id = get_bank_id(db, &transaction.bank);
+
+    let tx = db.transaction()?;
+
+    tx.execute(
+        "UPDATE transactions
+            SET 
+                date = @date,
+                name = @name,
+                category_id = @category_id,
+                bank_id = @bank_id,
+                amount = @amount
+            WHERE id = @id;",
+        named_params! {
+            "@id": transaction.id,
+            "@date": transaction.date,
+            "@name": transaction.name,
+            "@category_id": category_id,
+            "@bank_id": bank_id,
+            "@amount": transaction.amount
+        },
+    )?;
+
+    println!("transactions insert working");
+
+    // TODO: There could be a better way to handle update,
+    // this is the simplest for now
+    tx.execute(
+        "DELETE FROM 
+            transaction_type_mapping 
+            WHERE transaction_id = @transaction_id;",
+        named_params! {
+            "@transaction_id": transaction.id,
+        },
+    )?;
+
+    println!("delete working");
+
+    if !transaction.transaction_types.is_empty() {
+        let transaction_type_ids = insert_if_not_exists(
+            &tx,
+            "transaction_type",
+            "name",
+            &transaction.transaction_types,
+        );
+
+        for transaction_type_id in transaction_type_ids {
+            tx.execute(
+                "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
+                &[&transaction.id.unwrap(), &transaction_type_id], // this feels kinda icky but will do for now
+                )?;
+        }
+    }
+
+    tx.commit()
+}

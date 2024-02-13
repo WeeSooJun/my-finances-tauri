@@ -146,6 +146,14 @@ fn delete_transaction(app_handle: AppHandle, id: i64) -> bool {
     }
 }
 
+#[tauri::command]
+fn edit_transaction(app_handle: AppHandle, transaction: Transaction) -> bool {
+    match app_handle.db_mut(|db| database::edit_transaction(db, transaction)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
 fn main() -> Result<()> {
     tauri::Builder::default()
         .manage(AppState {
@@ -163,7 +171,8 @@ fn main() -> Result<()> {
             set_database_passphrase,
             get_types_for_field,
             process_xlsx,
-            delete_transaction
+            delete_transaction,
+            edit_transaction,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

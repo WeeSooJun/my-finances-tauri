@@ -29,7 +29,7 @@ where
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Transaction {
-    pub id: Option<i64>,
+    pub id: Option<i64>, // This feels a bit out of place and could be 2 structs, but let's leave it for now and continue on
     #[serde(
         serialize_with = "serialize_date",
         deserialize_with = "deserialize_date"
