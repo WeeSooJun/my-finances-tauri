@@ -60,7 +60,7 @@ const Table: TableComponent = (props) => {
       onSubmit={async (e) => {
         e.preventDefault();
         // TODO: fix bug here and convert to controlled components for row input
-        let transaction: NewTransaction = {
+        const transaction: NewTransaction = {
           date: date()!,
           name: name(),
           category: category(),
@@ -72,10 +72,10 @@ const Table: TableComponent = (props) => {
           await addNewTransaction(transaction);
           props.setShowNewEntry(false);
         } else {
-          let transactionToUpdate: Transaction = {
+          const transactionToUpdate: Transaction = {
             id: editTransactionId() as number, // SolidJS type guard cmi https://github.com/microsoft/TypeScript/issues/53178
-            ...transaction
-          }
+            ...transaction,
+          };
           await editTransaction(transactionToUpdate);
           setEditTransactionId(null);
         }

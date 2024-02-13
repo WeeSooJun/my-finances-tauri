@@ -69,7 +69,7 @@ const TableRow: TableRowComponent = (props) => {
 
   return (
     <>
-      {props.transactionInput !== undefined && props.editTransactionId!() !== transaction.id   && props.setEditTransactionId && props.onDeleteClick && (
+      {props.transactionInput !== undefined && props.editTransactionId!() !== transaction.id && props.setEditTransactionId && props.onDeleteClick && (
         <tr
           classList={{
             "hover-row": true,
@@ -97,7 +97,11 @@ const TableRow: TableRowComponent = (props) => {
           <td>{transaction.bank}</td>
           <td>{transaction.amount}</td>
           <td class="border-none">
-            <button type="button" classList={{ "opacity-0": !isHovered(), "opacity-1": isHovered() }} onClick={() => props.onDeleteClick!(transaction.id)}>
+            <button
+              type="button"
+              classList={{ "opacity-0": !isHovered(), "opacity-1": isHovered() }}
+              onClick={() => props.onDeleteClick!(transaction.id)}
+            >
               X
             </button>
           </td>
