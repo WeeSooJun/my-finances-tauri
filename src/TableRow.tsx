@@ -14,7 +14,7 @@ interface TableRowProps {
   setCategory: Setter<string>;
   setTransactionTypes: Setter<string[]>;
   setBank: Setter<string>;
-  setAmount: Setter<number>;
+  setAmount: Setter<number | null>;
 }
 
 type TableRowComponent = Component<TableRowProps>;
@@ -80,6 +80,11 @@ const TableRow: TableRowComponent = (props) => {
             // hate this but SolidJS still has not type guard
             // already checked on top
             props.setEditTransactionId!(props.transactionInput!.id);
+            props.setDate(transaction.date);
+            props.setName(transaction.name);
+            props.setCategory(transaction.category);
+            props.setTransactionTypes(transaction.transactionTypes);
+            props.setAmount(transaction.amount);
           }}
           tabIndex="0"
           onKeyDown={(event) => {
