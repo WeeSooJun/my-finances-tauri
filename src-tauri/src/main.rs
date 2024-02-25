@@ -5,6 +5,7 @@
 mod database;
 mod state;
 mod transaction;
+mod util;
 
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use chrono::NaiveDate;
@@ -13,14 +14,12 @@ use state::{AppState, ServiceAccess};
 use std::fs;
 use tauri::{AppHandle, Manager, State};
 use transaction::Transaction;
+use util::get_app_dir;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn is_database_initialized(app_handle: AppHandle) -> bool {
-    let app_dir = app_handle
-        .path_resolver()
-        .app_data_dir()
-        .expect("The app data directory should exist.");
+    let app_dir = get_app_dir(&app_handle);
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
     let sqlite_path = app_dir.join("database.sqlite");
     match fs::metadata(sqlite_path) {
@@ -93,13 +92,15 @@ fn get_types_for_field(app_handle: AppHandle, field_name: String) -> Vec<String>
 }
 
 #[tauri::command]
-fn process_xlsx(app_handle: AppHandle, file_path: String) {
+fn process_xlsx(app_handle: AppHandle, file_path: String) -> bool {
     let mut workbook: Xlsx<_> = open_workbook(file_path).unwrap();
     let range = workbook
         .worksheet_range("Sheet1")
         .expect("Cannot find 'Sheet1'");
 
     let mut iter = RangeDeserializerBuilder::new().from_range(&range).unwrap();
+
+    let mut has_err = false;
 
     while let Some(result) = iter.next() {
         let (date, name, category, amount, raw_transaction_types, bank): (
@@ -123,8 +124,12 @@ fn process_xlsx(app_handle: AppHandle, file_path: String) {
             transaction_types,
             bank,
         };
-        app_handle.db_mut(|db| database::add_new_transaction(new_transaction, db));
+        match app_handle.db_mut(|db| database::add_new_transaction(new_transaction, db)) {
+            Ok(_) => (),
+            Err(_) => has_err = true,
+        }
     }
+    has_err
 }
 
 #[tauri::command]
