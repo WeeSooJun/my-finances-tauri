@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 // import "./App.css";
 import Main from "./Main";
 import { invoke } from "@tauri-apps/api/tauri";
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 
 // interface FormElements extends HTMLFormControlsCollection {
 //   password: HTMLInputElement;
@@ -19,6 +20,8 @@ import { invoke } from "@tauri-apps/api/tauri";
 //   target: SingleTarget[];
 // }
 
+const queryClient = new QueryClient();
+
 function App() {
   const [showSetOrEnter, setShowSetOrEnter] = createSignal(true);
   const [showPasswordError, setShowPasswordError] = createSignal(false);
@@ -35,7 +38,7 @@ function App() {
     setShowEnterPassword(false);
   }
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       {showEnterPassword() && (
         <>
           <form
@@ -53,7 +56,7 @@ function App() {
         </>
       )}
       {!showEnterPassword() && <Main />}
-    </>
+    </QueryClientProvider>
   );
 }
 

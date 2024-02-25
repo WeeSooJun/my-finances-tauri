@@ -4,6 +4,7 @@ import NewFieldType from "./NewFieldType";
 import { Dayjs } from "dayjs";
 import { open } from "@tauri-apps/api/dialog";
 import Table from "./Table";
+import { createQuery } from "@tanstack/solid-query";
 
 export type Transaction = {
   id: number;
@@ -11,23 +12,48 @@ export type Transaction = {
   name: string;
   category: string;
   transactionTypes: string[];
-  bank: string | null;
+  bank: string;
   amount: number;
 };
 
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 export type NewTransaction = PartialBy<Transaction, "id">;
 
 const Main = () => {
-  const [showNewEntry, setShowNewEntry] = createSignal(false);
-  const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
-  const [categories, setCategories] = createSignal<string[]>([]);
-  const [banks, setBanks] = createSignal<string[]>([]);
-  const [transactions, setTransactions] = createSignal<Transaction[]>([]);
+  const categoriesQueryResult = createQuery(() => ({
+    queryKey: ["categoriesData"],
+    queryFn: async () => {
+      const response = await getTypesForField("category");
+      return response;
+    },
+  }));
+  const banksQueryResult = createQuery(() => ({
+    queryKey: ["banksData"],
+    queryFn: async () => {
+      const response = await getTypesForField("bank");
+      return response;
+    },
+  }));
+  const transactionTypeOptionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionTypeOptionsData"],
+    queryFn: async () => {
+      const response = await getTypesForField("transaction_type");
+      return response;
+    },
+  }));
+  const transactionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionsData"],
+    queryFn: async () => {
+      const response = await getTransactions();
+      return response;
+    },
+  }));
 
-  getTransactions().then((transactions) => setTransactions(transactions));
+  const [showNewEntry, setShowNewEntry] = createSignal(false);
+  // const [transactions, setTransactions] = createSignal<Transaction[]>([]);
+
+  // getTransactions().then((transactions) => setTransactions(transactions));
   return (
     <div class="container">
       <h1>My Finances!</h1>
@@ -36,21 +62,21 @@ const Main = () => {
           fieldName="category"
           fieldSubmit={async (e) => {
             addNewCategory(e);
-            setCategories(await getTypesForField("category"));
+            await categoriesQueryResult.refetch();
           }}
         />
         <NewFieldType
           fieldName="transactionType"
           fieldSubmit={async (e) => {
             addNewTransactionType(e);
-            setTransactionTypes(await getTypesForField("transaction_type"));
+            await transactionTypeOptionsQueryResult.refetch();
           }}
         />
         <NewFieldType
           fieldName="bank"
           fieldSubmit={async (e) => {
             addNewBank(e);
-            setBanks(await getTypesForField("bank"));
+            await banksQueryResult.refetch();
           }}
         />
       </div>
@@ -68,7 +94,7 @@ const Main = () => {
             });
             if (selectedFile !== null && !Array.isArray(selectedFile)) {
               await processXlsx(selectedFile);
-              setTransactions(await getTransactions());
+              await transactionsQueryResult.refetch();
             } else {
               console.error("Error trying to send file name to rust backend");
             }
@@ -79,9 +105,9 @@ const Main = () => {
         <button
           onClick={async () => {
             setShowNewEntry((current) => !current);
-            setCategories(await getTypesForField("category"));
-            setTransactionTypes(await getTypesForField("transaction_type"));
-            setBanks(await getTypesForField("bank"));
+            await categoriesQueryResult.refetch();
+            await transactionTypeOptionsQueryResult.refetch();
+            await banksQueryResult.refetch();
           }}
         >
           {showNewEntry() && "Cancel"}
@@ -92,11 +118,10 @@ const Main = () => {
       <Table
         showNewEntry={showNewEntry()}
         setShowNewEntry={setShowNewEntry}
-        transactions={transactions()}
-        setTransactions={setTransactions}
-        transactionTypesOptions={transactionTypes()}
-        categories={categories()}
-        banks={banks()}
+        transactions={transactionsQueryResult.data!}
+        transactionTypesOptions={transactionTypeOptionsQueryResult.data!} // TODO: handle loading states later
+        categories={categoriesQueryResult.data!} // TODO: handle loading states later
+        banks={banksQueryResult.data!} // TODO: handle loading states later
       />
     </div>
   );

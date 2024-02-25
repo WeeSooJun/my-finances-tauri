@@ -22,7 +22,7 @@ fn is_database_initialized(app_handle: AppHandle) -> bool {
         .app_data_dir()
         .expect("The app data directory should exist.");
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-    let sqlite_path = app_dir.join("MyFinances.sqlite");
+    let sqlite_path = app_dir.join("database.sqlite");
     match fs::metadata(sqlite_path) {
         Ok(_) => true,
         Err(_) => false,
@@ -44,17 +44,6 @@ fn set_database_passphrase(app_handle: AppHandle, passphrase: String) -> bool {
     *app_state.db.lock().unwrap() = Some(db);
     true
 }
-
-// #[tauri::command]
-// fn greet(name: &str) -> String {
-//     format!("Hello, {}! You've been greeted from Rust!", name)
-// }
-
-// #[tauri::command]
-// fn return_string(word: String) -> String {
-//     println!("{}", word);
-//     return word;
-// }
 
 #[tauri::command]
 fn add_new_transaction_type(app_handle: AppHandle, new_type: String) -> bool {
@@ -146,6 +135,14 @@ fn delete_transaction(app_handle: AppHandle, id: i64) -> bool {
     }
 }
 
+#[tauri::command]
+fn edit_transaction(app_handle: AppHandle, transaction: Transaction) -> bool {
+    match app_handle.db_mut(|db| database::edit_transaction(db, transaction)) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
 fn main() -> Result<()> {
     tauri::Builder::default()
         .manage(AppState {
@@ -163,7 +160,8 @@ fn main() -> Result<()> {
             set_database_passphrase,
             get_types_for_field,
             process_xlsx,
-            delete_transaction
+            delete_transaction,
+            edit_transaction,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

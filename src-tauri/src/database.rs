@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 use rusqlite::{named_params, Connection, Result};
-use std::fs;
+use std::{fs, path::PathBuf};
 use tauri::AppHandle;
 
 use crate::transaction::{self, Transaction};
@@ -13,12 +13,24 @@ pub fn initialize_database(
     app_handle: &AppHandle,
     passphrase: String,
 ) -> Result<Connection, rusqlite::Error> {
-    let app_dir = app_handle
+    let app_dir_base = app_handle
         .path_resolver()
         .app_data_dir()
         .expect("The app data directory should exist.");
+    let app_dir = if cfg!(debug_assertions) {
+        // Convert to string and append suffix
+        let path_str = app_dir_base.into_os_string().into_string().unwrap();
+        let new_path_str = format!("{}-dev", path_str);
+
+        // Convert back to PathBuf
+        PathBuf::from(new_path_str)
+    } else {
+        app_dir_base
+    };
+
+    println!("{:?}", app_dir);
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-    let sqlite_path = app_dir.join("MyFinances.sqlite");
+    let sqlite_path = app_dir.join("database.sqlite");
 
     let mut db = Connection::open(sqlite_path)?;
     // Maybe can consider combining the 2 lines below
@@ -204,7 +216,6 @@ fn insert_one_if_not_exists(
 
 pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) -> Result<()> {
     let tx = db.transaction()?;
-    println!("new_transaction is {:?}", new_transaction);
     // TODO: split this into another function for security maybe
     // to prevent user from hitting the "endpoint" directly and adding new types
     let category_id = insert_one_if_not_exists(&tx, "category", "name", new_transaction.category)?;
@@ -318,7 +329,6 @@ pub fn get_types_for_field(
 }
 
 pub fn delete_transaction_by_id(db: &mut Connection, id: i64) -> Result<()> {
-    println!("{}", id);
     let tx = db.transaction()?;
     tx.execute(
         "DELETE FROM 
@@ -336,6 +346,73 @@ pub fn delete_transaction_by_id(db: &mut Connection, id: i64) -> Result<()> {
             "@id": id,
         },
     )?;
+
+    tx.commit()
+}
+
+pub fn get_category_id(db: &Connection, category: &str) -> i64 {
+    let query = format!("SELECT id FROM category WHERE name = ?");
+    let mut stmt = db.prepare(&query).unwrap();
+    stmt.query_row([category], |row| row.get(0)).unwrap()
+}
+
+pub fn get_bank_id(db: &Connection, bank: &str) -> i64 {
+    let query = format!("SELECT id FROM bank WHERE name = ?");
+    let mut stmt = db.prepare(&query).unwrap();
+    stmt.query_row([bank], |row| row.get(0)).unwrap()
+}
+
+pub fn edit_transaction(db: &mut Connection, transaction: Transaction) -> Result<()> {
+    let category_id = get_category_id(db, &transaction.category);
+    let bank_id = get_bank_id(db, &transaction.bank);
+
+    let tx = db.transaction()?;
+
+    tx.execute(
+        "UPDATE transactions
+            SET 
+                date = @date,
+                name = @name,
+                category_id = @category_id,
+                bank_id = @bank_id,
+                amount = @amount
+            WHERE id = @id;",
+        named_params! {
+            "@id": transaction.id,
+            "@date": transaction.date,
+            "@name": transaction.name,
+            "@category_id": category_id,
+            "@bank_id": bank_id,
+            "@amount": transaction.amount
+        },
+    )?;
+
+    // TODO: There could be a better way to handle update,
+    // this is the simplest for now
+    tx.execute(
+        "DELETE FROM 
+            transaction_type_mapping 
+            WHERE transaction_id = @transaction_id;",
+        named_params! {
+            "@transaction_id": transaction.id,
+        },
+    )?;
+
+    if !transaction.transaction_types.is_empty() {
+        let transaction_type_ids = insert_if_not_exists(
+            &tx,
+            "transaction_type",
+            "name",
+            &transaction.transaction_types,
+        );
+
+        for transaction_type_id in transaction_type_ids {
+            tx.execute(
+                "INSERT INTO transaction_type_mapping (transaction_id, transaction_type_id) VALUES (?, ?)",
+                &[&transaction.id.unwrap(), &transaction_type_id], // this feels kinda icky but will do for now
+                )?;
+        }
+    }
 
     tx.commit()
 }

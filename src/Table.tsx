@@ -1,44 +1,15 @@
-import { Setter, createSignal } from "solid-js";
+import { For, Setter, createSignal } from "solid-js";
 import type { Component } from "solid-js";
 import { NewTransaction, Transaction } from "./Main";
-import { addNewTransaction, deleteTransaction, getTransactions } from "./api";
+import { addNewTransaction, deleteTransaction, editTransaction, getTransactions } from "./api";
 import dayjs, { Dayjs } from "dayjs";
-
-interface NewRowWithFieldValuesProps {
-  transactionTypesOptions: string[];
-  categories: string[];
-  banks: string[];
-}
-
-const renderRow = (transaction: Transaction, onDeleteClick: (id: number) => Promise<void>) => {
-  const [isHovered, setIsHovered] = createSignal(false);
-  return (
-    <tr
-      classList={{
-        "hover-row": true,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <td>{transaction.date.format("DD/MM/YYYY")}</td>
-      <td>{transaction.name}</td>
-      <td>{transaction.category}</td>
-      <td>{transaction.transactionTypes.reduce((prev, curr) => `${prev}, ${curr}`)}</td>
-      <td>{transaction.bank}</td>
-      <td>{transaction.amount}</td>
-      <td class="border-none">
-        <button type="button" classList={{ "opacity-0": !isHovered(), "opacity-1": isHovered() }} onClick={() => onDeleteClick(transaction.id)}>
-          X
-        </button>
-      </td>
-    </tr>
-  );
-};
+import TableRow from "./TableRow";
+import { createQuery } from "@tanstack/solid-query";
 
 interface TableProps {
   showNewEntry: boolean;
   setShowNewEntry: Setter<boolean>;
-  setTransactions: Setter<Transaction[]>;
+  // setTransactions: Setter<Transaction[]>;
   transactions: Transaction[];
   transactionTypesOptions: string[];
   categories: string[];
@@ -48,10 +19,11 @@ interface TableProps {
 type TableComponent = Component<TableProps>;
 
 const Table: TableComponent = (props) => {
+  const [editTransactionId, setEditTransactionId] = createSignal<number | null>(null);
   const [date, setDate] = createSignal<Dayjs>(dayjs());
   const [name, setName] = createSignal<string>("");
   const [category, setCategory] = createSignal<string>("");
-  const [transactionTypes, setTransactionTypes] = createSignal<Set<string>>(new Set([]));
+  const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
   const [bank, setBank] = createSignal<string>("");
   const [amount, setAmount] = createSignal<number | null>(null);
 
@@ -62,71 +34,17 @@ const Table: TableComponent = (props) => {
   // setCategory(props.categories[0]);
   // setBank(props.banks[0]);
   // })
-  const onDeleteClick = async (id: number) => {
-    console.log(id);
-    await deleteTransaction(id);
-    props.setTransactions(await getTransactions());
-  };
+  const transactionsQueryResult = createQuery(() => ({
+    queryKey: ["transactionsData"],
+    queryFn: async () => {
+      const response = await getTransactions();
+      return response;
+    },
+  }));
 
-  const newRowWithFieldValues = ({ transactionTypesOptions, categories, banks }: NewRowWithFieldValuesProps) => {
-    return (
-      <>
-        <tr>
-          <td>
-            <input type="date" value={(date() as Dayjs).format("YYYY-MM-DD")} onChange={(e) => setDate(dayjs(e.target.value))} />
-          </td>
-          <td>
-            <input type="string" value={name()} onChange={(e) => setName(e.target.value)} />
-          </td>
-          <td>
-            <select value={category()} onChange={(e) => setCategory(e.target.value)}>
-              {categories.map((val) => (
-                <option>{val}</option>
-              ))}
-            </select>
-          </td>
-          <td>
-            <div>
-              {transactionTypesOptions.map((val) => {
-                return (
-                  <div>
-                    <input
-                      type="checkbox"
-                      value={val}
-                      checked={transactionTypes().has(val)}
-                      onChange={(e) =>
-                        e.target.checked
-                          ? setTransactionTypes((prev) => prev.add(e.target.value))
-                          : setTransactionTypes((prev) => {
-                              prev.delete(e.target.value);
-                              return prev;
-                            })
-                      }
-                    />
-                    <label for={val}>{val}</label>
-                  </div>
-                );
-              })}
-            </div>
-          </td>
-          <td>
-            <select value={bank()} onChange={(e) => setBank(e.target.value)}>
-              {banks.map((val) => (
-                <option>{val}</option>
-              ))}
-            </select>
-          </td>
-          <td>
-            <input
-              onChange={(e) => {
-                setAmount(parseFloat(e.target.value));
-              }}
-              value={amount() !== null ? (amount() as number) : ""}
-            />
-          </td>
-        </tr>
-      </>
-    );
+  const onDeleteClick = async (id: number) => {
+    await deleteTransaction(id);
+    await transactionsQueryResult.refetch();
   };
 
   return (
@@ -139,17 +57,26 @@ const Table: TableComponent = (props) => {
           date: date()!,
           name: name(),
           category: category(),
-          transactionTypes: Array.from(transactionTypes()),
+          transactionTypes: transactionTypes(),
           bank: bank(),
           amount: amount()!,
         };
-        await addNewTransaction(transaction);
-        props.setShowNewEntry(false);
-        props.setTransactions(await getTransactions());
+        if (editTransactionId() === null) {
+          await addNewTransaction(transaction);
+          props.setShowNewEntry(false);
+        } else {
+          const transactionToUpdate: Transaction = {
+            id: editTransactionId() as number, // SolidJS type guard cmi https://github.com/microsoft/TypeScript/issues/53178
+            ...transaction,
+          };
+          await editTransaction(transactionToUpdate);
+          setEditTransactionId(null);
+        }
+        await transactionsQueryResult.refetch();
         setDate(dayjs);
         setName("");
         setCategory("");
-        setTransactionTypes(new Set([]));
+        setTransactionTypes([]);
         setBank("");
         setAmount(null);
       }}
@@ -167,8 +94,32 @@ const Table: TableComponent = (props) => {
         </thead>
         <tbody>
           {props.showNewEntry &&
-            newRowWithFieldValues({ transactionTypesOptions: props.transactionTypesOptions, categories: props.categories, banks: props.banks })}
-          {props.transactions.map((ele) => renderRow(ele, onDeleteClick))}
+            TableRow({
+              setDate,
+              setName,
+              setCategory,
+              setTransactionTypes,
+              setBank,
+              setAmount,
+            })}
+          {
+            <For each={props.transactions}>
+              {(txn) =>
+                TableRow({
+                  editTransactionId,
+                  setEditTransactionId,
+                  transactionInput: txn,
+                  onDeleteClick,
+                  setDate,
+                  setName,
+                  setCategory,
+                  setTransactionTypes,
+                  setBank,
+                  setAmount,
+                })
+              }
+            </For>
+          }
         </tbody>
       </table>
       <button style={{ visibility: "hidden", width: 0, height: 0, position: "absolute" }} type="submit" />{" "}
