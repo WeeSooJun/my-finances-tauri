@@ -1,8 +1,8 @@
 [package]
-name = "my-finances-tauri"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "MyFinances"
+version = "0.0.1"
+description = "A expense / cashback tracking app"
+authors = ["SJ"]
 license = ""
 repository = ""
 edition = "2021"
@@ -18,7 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rusqlite = { version = "0.30.0", features = ["bundled-sqlcipher", "chrono"] }
 chrono = "0.4"
-calamine = "0.23.1"
+calamine = "0.24.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

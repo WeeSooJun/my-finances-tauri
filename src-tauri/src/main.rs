@@ -22,7 +22,7 @@ fn is_database_initialized(app_handle: AppHandle) -> bool {
         .app_data_dir()
         .expect("The app data directory should exist.");
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-    let sqlite_path = app_dir.join("MyFinances.sqlite");
+    let sqlite_path = app_dir.join("database.sqlite");
     match fs::metadata(sqlite_path) {
         Ok(_) => true,
         Err(_) => false,

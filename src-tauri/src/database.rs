@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 use rusqlite::{named_params, Connection, Result};
-use std::fs;
+use std::{fs, path::PathBuf};
 use tauri::AppHandle;
 
 use crate::transaction::{self, Transaction};
@@ -13,12 +13,24 @@ pub fn initialize_database(
     app_handle: &AppHandle,
     passphrase: String,
 ) -> Result<Connection, rusqlite::Error> {
-    let app_dir = app_handle
+    let app_dir_base = app_handle
         .path_resolver()
         .app_data_dir()
         .expect("The app data directory should exist.");
+    let app_dir = if cfg!(debug_assertions) {
+        // Convert to string and append suffix
+        let path_str = app_dir_base.into_os_string().into_string().unwrap();
+        let new_path_str = format!("{}-dev", path_str);
+
+        // Convert back to PathBuf
+        PathBuf::from(new_path_str)
+    } else {
+        app_dir_base
+    };
+
+    println!("{:?}", app_dir);
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-    let sqlite_path = app_dir.join("MyFinances.sqlite");
+    let sqlite_path = app_dir.join("database.sqlite");
 
     let mut db = Connection::open(sqlite_path)?;
     // Maybe can consider combining the 2 lines below
