@@ -1,11 +1,11 @@
 use chrono::NaiveDate;
 use rusqlite::{named_params, Connection, Result};
-use std::{fs, path::PathBuf};
+use std::fs;
 use tauri::AppHandle;
 
-use crate::transaction::{self, Transaction};
+use crate::{transaction::Transaction, util::get_app_dir};
 
-const CURRENT_DB_VERSION: u32 = 1;
+// const CURRENT_DB_VERSION: u32 = 1;
 // Credit to RandomEngy https://github.com/RandomEngy/tauri-sqlite/blob/main/src-tauri/src/database.rs
 /// Initializes the database connection, creating the .sqlite file if needed, and upgrading the database
 /// if it's out of date.
@@ -13,33 +13,18 @@ pub fn initialize_database(
     app_handle: &AppHandle,
     passphrase: String,
 ) -> Result<Connection, rusqlite::Error> {
-    let app_dir_base = app_handle
-        .path_resolver()
-        .app_data_dir()
-        .expect("The app data directory should exist.");
-    let app_dir = if cfg!(debug_assertions) {
-        // Convert to string and append suffix
-        let path_str = app_dir_base.into_os_string().into_string().unwrap();
-        let new_path_str = format!("{}-dev", path_str);
-
-        // Convert back to PathBuf
-        PathBuf::from(new_path_str)
-    } else {
-        app_dir_base
-    };
-
-    println!("{:?}", app_dir);
+    let app_dir = get_app_dir(app_handle);
     fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
     let sqlite_path = app_dir.join("database.sqlite");
 
     let mut db = Connection::open(sqlite_path)?;
     // Maybe can consider combining the 2 lines below
-    db.execute("PRAGMA cipher_compatibility = '4';", []);
+    let _ = db.execute("PRAGMA cipher_compatibility = '4';", []);
 
-    db.execute(&format!("PRAGMA key ='{}';", passphrase), []);
+    let _ = db.execute(&format!("PRAGMA key ='{}';", passphrase), []);
 
     let mut user_pragma = db.prepare("PRAGMA user_version")?;
-    let existing_user_version: u32 = user_pragma.query_row([], |row| Ok(row.get(0)?))?;
+    let _existing_user_version: u32 = user_pragma.query_row([], |row| Ok(row.get(0)?))?;
     drop(user_pragma);
 
     let tx = db.transaction()?;
