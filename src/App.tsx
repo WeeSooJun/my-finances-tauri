@@ -23,16 +23,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 const queryClient = new QueryClient();
 
 function App() {
-  const [showSetOrEnter, setShowSetOrEnter] = createSignal(true);
-  const [showPasswordError, setShowPasswordError] = createSignal(false);
+  const [hasPasswordBeenSet, setHasPasswordBeenSet] = createSignal(true);
+  const [showPasswordError, setShowPasswordError] = createSignal<string | null>(null);
   const [showEnterPassword, setShowEnterPassword] = createSignal(true);
 
-  invoke("is_database_initialized").then((res) => setShowSetOrEnter(res as boolean));
+  invoke("is_database_initialized").then((res) => setHasPasswordBeenSet(res as boolean));
 
   async function setPassphrase(passphrase: string) {
     const result = await invoke("set_database_passphrase", { passphrase });
     if (!result) {
-      setShowPasswordError(true);
+      setShowPasswordError("Wrong password, please try again.");
       return;
     }
     setShowEnterPassword(false);
@@ -44,15 +44,29 @@ function App() {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
+
               const passwordInput = document.querySelector("#password") as HTMLInputElement;
+              const confirmPasswordInput = document.querySelector("#confirm-password") as HTMLInputElement;
+              if (!hasPasswordBeenSet() && (passwordInput.value !== confirmPasswordInput.value)) {
+                setShowPasswordError("The passwords do not match!");
+                return;
+              }
               await setPassphrase(passwordInput.value);
             }}
           >
-            Please {showSetOrEnter() ? "enter" : "set"} your password
-            <input id="password" />
-            <button type="submit">Enter</button>
+            <div class="grid grid-cols-3 items-center">
+              Please {hasPasswordBeenSet() ? "enter" : "set"} your password
+              <input id="password" type="password"/>
+              <button type="submit">Enter</button>
+            </div>
+            {!hasPasswordBeenSet() && (
+              <div class="grid grid-cols-3 items-center">
+                Confirm your password
+                <input id="confirm-password" type="password" />
+              </div>
+            )}
           </form>
-          {showPasswordError() && <div style={{ color: "red" }}>Wrong password, please try again.</div>}
+          {showPasswordError() && <div style={{ color: "red" }}>{showPasswordError()}</div>}
         </>
       )}
       {!showEnterPassword() && <Main />}
