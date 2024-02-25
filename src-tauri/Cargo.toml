@@ -1,5 +1,5 @@
 [package]
-name = "MyFinances"
+name = "my_finances"
 version = "0.0.1"
 description = "A expense / cashback tracking app"
 authors = ["SJ"]
