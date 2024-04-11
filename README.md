@@ -16,6 +16,10 @@ Written using the Tauri Framework (similar to Electon but written in Rust) with 
 
 ## How to start dev
 
-Run
+Ensure that you have pnpm (or npm) installed, git clone to your locale then run
+
+`pnpm install`
+
+Subsequently to start a development version of the application run the following command below:
 
 `pnpm tauri dev`
