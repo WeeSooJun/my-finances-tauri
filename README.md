@@ -23,3 +23,7 @@ Ensure that you have pnpm (or npm) installed, git clone to your locale then run
 Subsequently to start a development version of the application run the following command below:
 
 `pnpm tauri dev`
+
+## Show & Tell
+
+\<TO BE ADDED\>
