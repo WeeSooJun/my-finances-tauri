@@ -1,0 +1,61 @@
+name: feature
+
+# This workflow run tests and build for each push
+
+on:
+  push:
+    branches:
+      - "feature-**"
+
+jobs:
+  feature-run:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+    runs-on: ${{ matrix.settings.platform }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.settings.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+
+      - name: Lint
+        run: |
+          cd src-tauri
+          cargo fmt -- --check
+
+      - name: Test
+        run: |
+          cd src-tauri
+          cargo check
+          cargo test --all
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.14.1 # Optional: specify a pnpm version
+
+      - name: install frontend dependencies
+        run: pnpm install # change this to npm or pnpm depending on which one you use
+
+      # If tagName and releaseId are omitted tauri-action will only build the app and won't try to upload any asstes.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          args: ${{ matrix.settings.args }}
