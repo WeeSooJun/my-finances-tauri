@@ -257,7 +257,7 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             LEFT JOIN transaction_type_mapping ttm ON t.id = ttm.transaction_id
             LEFT JOIN transaction_type tt ON ttm.transaction_type_id = tt.id
             GROUP BY t.id
-            ORDER BY t.date DESC;
+            ORDER BY t.date DESC, t.id DESC;
         ",
     )?;
     let mut transactions: Vec<Transaction> = Vec::new();
