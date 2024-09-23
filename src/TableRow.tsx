@@ -84,6 +84,7 @@ const TableRow: TableRowComponent = (props) => {
             props.setName(transaction.name);
             props.setCategory(transaction.category);
             props.setTransactionTypes(transaction.transactionTypes);
+            props.setBank(transaction.bank);
             props.setAmount(transaction.amount);
           }}
           tabIndex="0"
