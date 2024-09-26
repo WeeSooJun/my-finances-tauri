@@ -5,6 +5,7 @@ import { addNewTransaction, deleteTransaction, editTransaction, getTransactions 
 import dayjs, { Dayjs } from "dayjs";
 import TableRow from "./TableRow";
 import { createQuery } from "@tanstack/solid-query";
+import { Portal } from "solid-js/web";
 
 interface TableProps {
   showNewEntry: boolean;
@@ -26,6 +27,8 @@ const Table: TableComponent = (props) => {
   const [transactionTypes, setTransactionTypes] = createSignal<string[]>([]);
   const [bank, setBank] = createSignal<string>("");
   const [amount, setAmount] = createSignal<number | null>(null);
+  const [transactionPage, setTransactionPage] = createSignal<number>(0);
+  const [showDeleteModal, setDeleteModal] = createSignal<boolean>(false);
 
   // createComputed(() =>{
   // update the local copy whenever the parent updates
@@ -43,6 +46,12 @@ const Table: TableComponent = (props) => {
   }));
 
   const onDeleteClick = async (id: number) => {
+    // display popup to confirm delete
+    
+    await onDeleteSubmit(id);
+  }
+
+  const onDeleteSubmit = async (id: number) => {
     await deleteTransaction(id);
     await transactionsQueryResult.refetch();
   };
@@ -81,6 +90,10 @@ const Table: TableComponent = (props) => {
         setAmount(null);
       }}
     >
+      <Portal><div style={{background: "blue",   position: "fixed",
+  left: "50%",
+  top: "50%",
+  transform: "translate(-50%, -50%)"}}>Test</div></Portal>
       <table>
         <thead>
           <tr>
