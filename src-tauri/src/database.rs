@@ -241,6 +241,7 @@ pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) ->
 }
 
 pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::Error> {
+    let limit = "10";
     let mut stmt = db.prepare(
         "
             SELECT
@@ -257,12 +258,13 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             LEFT JOIN transaction_type_mapping ttm ON t.id = ttm.transaction_id
             LEFT JOIN transaction_type tt ON ttm.transaction_type_id = tt.id
             GROUP BY t.id
-            ORDER BY t.date DESC, t.id DESC;
+            ORDER BY t.date DESC, t.id DESC
+            LIMIT :limit;
         ",
     )?;
     let mut transactions: Vec<Transaction> = Vec::new();
 
-    for row in stmt.query_map([], |row| {
+    for row in stmt.query_map(&[(":limit", limit)], |row| {
         Ok((
             row.get(0)?,
             row.get(1)?,
