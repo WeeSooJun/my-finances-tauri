@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "My Finances!",
-    "version": "0.1.4"
+    "version": "0.1.5"
   },
   "tauri": {
     "allowlist": {
@@ -34,7 +34,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "my-finances",
+        "title": "my-finances-0.1.5",
         "width": 800,
         "height": 600
       }

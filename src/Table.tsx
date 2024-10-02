@@ -55,6 +55,7 @@ const Table: TableComponent = (props) => {
     await deleteTransaction(id);
     await transactionsQueryResult.refetch();
   };
+  console.log(date());
 
   return (
     <form
@@ -82,7 +83,7 @@ const Table: TableComponent = (props) => {
           setEditTransactionId(null);
         }
         await transactionsQueryResult.refetch();
-        setDate(dayjs);
+        setDate(dayjs());
         setName("");
         setCategory("");
         setTransactionTypes([]);
@@ -90,10 +91,7 @@ const Table: TableComponent = (props) => {
         setAmount(null);
       }}
     >
-      <Portal><div style={{background: "blue",   position: "fixed",
-  left: "50%",
-  top: "50%",
-  transform: "translate(-50%, -50%)"}}>Test</div></Portal>
+      {/* <Portal><div class="bg-black fixed left-0 top-0 overflow-auto w-full h-full bg-opacity-40 "><div class="bg-white ml-[25%] mr-[25%] mt-[25%] mb-[25%]">TEST</div></div></Portal> */}
       <table>
         <thead>
           <tr>
