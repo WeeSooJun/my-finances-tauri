@@ -55,7 +55,6 @@ const Table: TableComponent = (props) => {
     await deleteTransaction(id);
     await transactionsQueryResult.refetch();
   };
-  console.log(date());
 
   return (
     <form
