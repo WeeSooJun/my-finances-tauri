@@ -47,7 +47,7 @@ function App() {
 
               const passwordInput = document.querySelector("#password") as HTMLInputElement;
               const confirmPasswordInput = document.querySelector("#confirm-password") as HTMLInputElement;
-              if (!hasPasswordBeenSet() && (passwordInput.value !== confirmPasswordInput.value)) {
+              if (!hasPasswordBeenSet() && passwordInput.value !== confirmPasswordInput.value) {
                 setShowPasswordError("The passwords do not match!");
                 return;
               }
@@ -56,7 +56,7 @@ function App() {
           >
             <div class="grid grid-cols-3 items-center">
               Please {hasPasswordBeenSet() ? "enter" : "set"} your password
-              <input id="password" type="password"/>
+              <input id="password" type="password" />
               <button type="submit">Enter</button>
             </div>
             {!hasPasswordBeenSet() && (

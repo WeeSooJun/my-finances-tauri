@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { addNewBank, addNewCategory, addNewTransactionType, getTypesForField, getTransactions, processXlsx } from "./api";
 import NewFieldType from "./NewFieldType";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { open } from "@tauri-apps/api/dialog";
 import Table from "./Table";
 import { createQuery } from "@tanstack/solid-query";
@@ -45,7 +45,7 @@ const Main = () => {
   const transactionsQueryResult = createQuery(() => ({
     queryKey: ["transactionsData"],
     queryFn: async () => {
-      const response = await getTransactions();
+      const response = await getTransactions(10, dayjs().format("YYYY-MM-DD"));
       return response;
     },
   }));
@@ -118,10 +118,11 @@ const Main = () => {
       <Table
         showNewEntry={showNewEntry()}
         setShowNewEntry={setShowNewEntry}
-        transactions={transactionsQueryResult.data!}
+        // transactions={transactionsQueryResult.data!}
         transactionTypesOptions={transactionTypeOptionsQueryResult.data!} // TODO: handle loading states later
         categories={categoriesQueryResult.data!} // TODO: handle loading states later
         banks={banksQueryResult.data!} // TODO: handle loading states later
+        // transactionsQueryResult={transactionsQueryResult}
       />
     </div>
   );

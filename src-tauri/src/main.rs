@@ -78,9 +78,9 @@ fn add_new_transaction(app_handle: AppHandle, new_transaction: Transaction) -> b
 }
 
 #[tauri::command]
-fn get_transactions(app_handle: AppHandle) -> Vec<Transaction> {
+fn get_transactions(app_handle: AppHandle, records_per_page: u32, key: &str) -> Vec<Transaction> {
     app_handle
-        .db(|db| database::get_transactions(db))
+        .db(|db| database::get_transactions(db, records_per_page, key))
         .expect("no db error")
 }
 

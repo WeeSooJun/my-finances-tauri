@@ -240,8 +240,11 @@ pub fn add_new_transaction(new_transaction: Transaction, db: &mut Connection) ->
     tx.commit()
 }
 
-pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::Error> {
-    let limit = "10";
+pub fn get_transactions(
+    db: &Connection,
+    records_per_page: u32,
+    key: &str,
+) -> Result<Vec<Transaction>, rusqlite::Error> {
     let mut stmt = db.prepare(
         "
             SELECT
@@ -257,6 +260,7 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
             LEFT JOIN bank b ON t.bank_id = b.id
             LEFT JOIN transaction_type_mapping ttm ON t.id = ttm.transaction_id
             LEFT JOIN transaction_type tt ON ttm.transaction_type_id = tt.id
+            WHERE t.date <= :key
             GROUP BY t.id
             ORDER BY t.date DESC, t.id DESC
             LIMIT :limit;
@@ -264,17 +268,23 @@ pub fn get_transactions(db: &Connection) -> Result<Vec<Transaction>, rusqlite::E
     )?;
     let mut transactions: Vec<Transaction> = Vec::new();
 
-    for row in stmt.query_map(&[(":limit", limit)], |row| {
-        Ok((
-            row.get(0)?,
-            row.get(1)?,
-            row.get(2)?,
-            row.get(3)?,
-            row.get(4).unwrap_or("".to_owned()),
-            row.get(5)?,
-            row.get(6)?,
-        ))
-    })? {
+    for row in stmt.query_map(
+        &[
+            (":limit", &records_per_page.to_string()),
+            (":key", &key.to_string()),
+        ],
+        |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4).unwrap_or("".to_owned()),
+                row.get(5)?,
+                row.get(6)?,
+            ))
+        },
+    )? {
         let (id, date, name, category, transaction_types, bank, amount): (
             i64,
             NaiveDate,

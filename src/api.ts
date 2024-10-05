@@ -74,8 +74,8 @@ type RawTransaction = {
   amount: number;
 };
 
-async function getTransactions(): Promise<Transaction[]> {
-  const result: RawTransaction[] = await invoke("get_transactions");
+async function getTransactions(recordsPerPage: number, key: string): Promise<Transaction[]> {
+  const result: RawTransaction[] = await invoke("get_transactions", { recordsPerPage, key });
   // TODO: write a snake_case to camelCase converter and vice versa
   return result.map((raw) => ({ ...raw, date: dayjs(raw.date), transaction_types: null, transactionTypes: raw.transaction_types }));
 }
